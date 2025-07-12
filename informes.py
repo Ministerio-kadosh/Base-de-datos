@@ -1,15 +1,20 @@
 from flask import session, request, jsonify
-from supabase import create_client, Client
+from supabase.client import create_client, Client
 import os
 from datetime import datetime
 import logging
 import json
 import csv
 from io import StringIO
+from dotenv import load_dotenv
 from consultas import consulta_personalizada, obtener_estadisticas
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 # Configuración Supabase
