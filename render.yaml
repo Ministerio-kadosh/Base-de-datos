@@ -4,19 +4,23 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: FLASK_ENV
         value: production
+      - key: FLASK_DEBUG
+        value: false
       - key: SECRET_KEY
         generateValue: true
       - key: GMAIL_PASS
-        sync: false  # Esta variable debe configurarse manualmente en el dashboard de Render
+        sync: false  # Configurar manualmente en el dashboard de Render
       - key: GMAIL_USER
         sync: false  # Email de Gmail para envío de correos
       - key: SUPABASE_URL
         sync: false  # URL de tu proyecto Supabase
       - key: SUPABASE_KEY
-        sync: false  # Clave anon/service_role de Supabase 
+        sync: false  # Clave anon de Supabase
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # Clave service_role de Supabase 

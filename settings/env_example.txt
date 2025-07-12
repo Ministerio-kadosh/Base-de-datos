@@ -1,0 +1,49 @@
+# =====================================================
+# CONFIGURACIÓN DE VARIABLES DE ENTORNO
+# Sistema de Gestión Flask - Supabase
+# =====================================================
+
+# Configuración de Supabase
+# Obtener estas credenciales desde el dashboard de Supabase
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_KEY=tu_anon_key_aqui
+SUPABASE_SERVICE_KEY=tu_service_role_key_aqui
+
+# Configuración de Flask
+SECRET_KEY=tu_secret_key_muy_segura_aqui
+FLASK_ENV=development
+FLASK_DEBUG=true
+
+# Configuración de Email (opcional)
+GMAIL_PASS=tu_password_de_gmail_aqui
+
+# Configuración de Base de Datos (para desarrollo local)
+DATABASE_URL=postgresql://usuario:password@localhost:5432/nombre_db
+
+# =====================================================
+# INSTRUCCIONES DE CONFIGURACIÓN
+# =====================================================
+
+# 1. Copia este archivo como .env
+# 2. Reemplaza los valores con tus credenciales reales
+# 3. Nunca subas el archivo .env al repositorio
+# 4. Para producción, configura las variables en tu servidor
+
+# =====================================================
+# OBTENER CREDENCIALES DE SUPABASE
+# =====================================================
+
+# 1. Ve a https://supabase.com y crea un proyecto
+# 2. En el dashboard, ve a Settings > API
+# 3. Copia la URL del proyecto
+# 4. Copia la anon key (para operaciones públicas)
+# 5. Copia la service role key (para operaciones del servidor)
+
+# =====================================================
+# SEGURIDAD
+# =====================================================
+
+# - Usa una SECRET_KEY fuerte (mínimo 32 caracteres)
+# - Nunca compartas las claves de Supabase
+# - En producción, usa variables de entorno del servidor
+# - Considera usar un gestor de secretos para producción 

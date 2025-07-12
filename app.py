@@ -9,7 +9,7 @@ from io import BytesIO
 from sesion import *
 from tablas import *
 from informes import *
-from email import enviar_por_correo, verificar_configuracion_email
+from email_utils import enviar_por_correo, verificar_configuracion_email
 from formularios import *
 from consultas import *
 
