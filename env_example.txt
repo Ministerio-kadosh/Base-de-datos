@@ -1,0 +1,12 @@
+# Variables de entorno para el Sistema de Gestión
+# Copia este archivo como .env y configura tus valores reales
+
+# Configuración de Supabase
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_KEY=tu-anon-key-de-supabase
+
+# Configuración de Flask
+SECRET_KEY=tu-secret-key-super-secreta
+
+# Configuración de Email (opcional)
+GMAIL_PASS=tu-contraseña-de-aplicación-gmail 
