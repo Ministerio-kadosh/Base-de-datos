@@ -1,3 +1,4 @@
+from flask import session, request, jsonify
 from supabase import create_client, Client
 import os
 from datetime import datetime
@@ -14,434 +15,465 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase: Client = create_client(supabase_url, supabase_key)
 
+def registrar_cambio_historial(tabla, id_registro, accion, datos_anteriores=None, datos_nuevos=None):
+    """Registrar cambio en el historial"""
+    try:
+        nuevo_registro = {
+            'tabla': tabla,
+            'id_registro': id_registro,
+            'accion': accion,
+            'datos_anteriores': datos_anteriores,
+            'datos_nuevos': datos_nuevos,
+            'usuario': session.get('user_email', 'sistema'),
+            'fecha_cambio': datetime.now().isoformat()
+        }
+        
+        response = supabase.table('historial_cambios').insert(nuevo_registro).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error en registrar_cambio_historial: {e}")
+        return None
+
 def buscar_bandeja_por_id(id=None):
-    """Buscar bandeja por ID - convertido de buscarBandejaPorId()"""
+    """Buscar tarea en bandeja por ID o todas - convertido de buscarBandejaPorId()"""
     try:
         if id:
-            # Buscar tarea específica
-            response = supabase.table('Bandeja').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('bandeja').select('*').eq('id', id).execute()
         else:
-            # Obtener todas las tareas
-            response = supabase.table('Bandeja').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_bandeja_por_id: {str(error)}')
-        raise error
+            response = supabase.table('bandeja').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_bandeja_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_bandeja(datos):
-    """Registrar nueva tarea en bandeja - convertido de obtenerUltimaIdYRegistrarBandeja()"""
+    """Obtener última ID y registrar tarea en bandeja - convertido de obtenerUltimaIdYRegistrarBandeja()"""
     try:
-        # Validar datos
-        validar_datos(datos, ESQUEMAS['Bandeja'])
+        # Agregar metadatos
+        datos['fecha_creacion'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['estado'] = 'pendiente'
         
-        # Preparar datos
-        datos['fecha'] = datetime.now().isoformat()
-        datos['estado'] = 'creado'
-        
-        # Insertar en Supabase
-        response = supabase.table('Bandeja').insert(datos).execute()
+        # Insertar tarea
+        response = supabase.table('bandeja').insert(datos).execute()
         
         if response.data:
-            nueva_tarea = response.data[0]
+            tarea = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Bandeja',
-                'id_registro': nueva_tarea['id'],
-                'datos_nuevos': nueva_tarea
-            })
+            registrar_cambio_historial(
+                'bandeja',
+                tarea['id'],
+                'INSERT',
+                None,
+                tarea
+            )
             
-            return nueva_tarea
-        
-        raise ValueError('Error al crear tarea')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_bandeja: {str(error)}')
-        raise error
+            return tarea
+        else:
+            raise ValueError('Error al registrar tarea en bandeja')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_bandeja: {e}")
+        raise e
 
-def actualizar_estados_bandeja():
-    """Actualizar estados de bandeja - convertido de actualizarEstadosBandeja()"""
+def procesar_tareas_pendientes():
+    """Procesar tareas pendientes en bandeja - convertido de procesarTareasPendientes()"""
     try:
-        # Obtener todas las tareas sin estado
-        response = supabase.table('Bandeja').select('*').is_('estado', 'null').execute()
+        # Buscar tareas sin estado
+        response = supabase.table('bandeja').select('*').is_('estado', 'null').execute()
         
         if response.data:
             for tarea in response.data:
-                # Actualizar estado a 'creado'
-                supabase.table('Bandeja').update({'estado': 'creado'}).eq('id', tarea['id']).execute()
+                # Marcar como creado
+                supabase.table('bandeja').update({'estado': 'creado'}).eq('id', tarea['id']).execute()
+                
+                # Registrar en historial
+                registrar_cambio_historial(
+                    'bandeja',
+                    tarea['id'],
+                    'PROCESS',
+                    tarea,
+                    {'estado': 'creado'}
+                )
+            
+            return len(response.data)
+        return 0
         
-        return True
-    except Exception as error:
-        logger.error(f'Error en actualizar_estados_bandeja: {str(error)}')
-        raise error
+    except Exception as e:
+        print(f"Error en procesar_tareas_pendientes: {e}")
+        raise e
 
 def editar_bandeja(datos):
-    """Editar tarea de bandeja - convertido de editarBandeja()"""
+    """Editar tarea en bandeja - convertido de editarBandeja()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_bandeja_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('bandeja').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Bandeja').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('bandeja').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             tarea_actualizada = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Bandeja',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': tarea_actualizada
-            })
+            registrar_cambio_historial(
+                'bandeja',
+                tarea_actualizada['id'],
+                'UPDATE',
+                datos_anteriores,
+                tarea_actualizada
+            )
             
             return tarea_actualizada
-        
-        raise ValueError('Error al actualizar tarea')
-    except Exception as error:
-        logger.error(f'Error en editar_bandeja: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar tarea en bandeja')
+            
+    except Exception as e:
+        print(f"Error en editar_bandeja: {e}")
+        raise e
 
 def eliminar_bandeja(id):
     """Eliminar tarea de bandeja - convertido de eliminarBandeja()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_bandeja_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('bandeja').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Bandeja').delete().eq('id', id).execute()
+        # Eliminar tarea
+        response = supabase.table('bandeja').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Bandeja',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'bandeja',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar tarea')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar tarea de bandeja')
+            
+    except Exception as e:
+        print(f"Error en eliminar_bandeja: {e}")
+        raise e
 
 def buscar_asistencias_por_id(id=None):
-    """Buscar asistencias por ID - convertido de buscarAsistenciasPorId()"""
+    """Buscar asistencia por ID o todas - convertido de buscarAsistenciasPorId()"""
     try:
         if id:
-            # Buscar asistencia específica
-            response = supabase.table('Asistencias').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('asistencias').select('*').eq('id', id).execute()
         else:
-            # Obtener todas las asistencias
-            response = supabase.table('Asistencias').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_asistencias_por_id: {str(error)}')
-        raise error
+            response = supabase.table('asistencias').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_asistencias_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_asistencias(datos):
-    """Registrar nueva asistencia - convertido de obtenerUltimaIdYRegistrarAsistencias()"""
+    """Obtener última ID y registrar asistencia - convertido de obtenerUltimaIdYRegistrarAsistencias()"""
     try:
-        # Preparar datos
-        datos['fecha'] = datetime.now().isoformat()
+        # Agregar metadatos
+        datos['fecha_registro'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Asistencias').insert(datos).execute()
+        # Insertar asistencia
+        response = supabase.table('asistencias').insert(datos).execute()
         
         if response.data:
-            nueva_asistencia = response.data[0]
+            asistencia = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Asistencias',
-                'id_registro': nueva_asistencia['id'],
-                'datos_nuevos': nueva_asistencia
-            })
+            registrar_cambio_historial(
+                'asistencias',
+                asistencia['id'],
+                'INSERT',
+                None,
+                asistencia
+            )
             
-            return nueva_asistencia['id']
-        
-        raise ValueError('Error al crear asistencia')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_asistencias: {str(error)}')
-        raise error
+            return asistencia
+        else:
+            raise ValueError('Error al registrar asistencia')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_asistencias: {e}")
+        raise e
 
 def editar_asistencias(datos):
     """Editar asistencia - convertido de editarAsistencias()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_asistencias_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('asistencias').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Asistencias').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('asistencias').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             asistencia_actualizada = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Asistencias',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': asistencia_actualizada
-            })
+            registrar_cambio_historial(
+                'asistencias',
+                asistencia_actualizada['id'],
+                'UPDATE',
+                datos_anteriores,
+                asistencia_actualizada
+            )
             
             return asistencia_actualizada
-        
-        raise ValueError('Error al actualizar asistencia')
-    except Exception as error:
-        logger.error(f'Error en editar_asistencias: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar asistencia')
+            
+    except Exception as e:
+        print(f"Error en editar_asistencias: {e}")
+        raise e
 
 def eliminar_asistencias(id):
     """Eliminar asistencia - convertido de eliminarAsistencias()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_asistencias_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('asistencias').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Asistencias').delete().eq('id', id).execute()
+        # Eliminar asistencia
+        response = supabase.table('asistencias').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Asistencias',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'asistencias',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar asistencia')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar asistencia')
+            
+    except Exception as e:
+        print(f"Error en eliminar_asistencias: {e}")
+        raise e
 
 def buscar_jovenes_por_id(id=None):
-    """Buscar jóvenes por ID - convertido de buscarJovenesPorId()"""
+    """Buscar joven por ID o todos - convertido de buscarJovenesPorId()"""
     try:
         if id:
-            # Buscar joven específico
-            response = supabase.table('Jovenes').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('jovenes').select('*').eq('id', id).execute()
         else:
-            # Obtener todos los jóvenes
-            response = supabase.table('Jovenes').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_jovenes_por_id: {str(error)}')
-        raise error
+            response = supabase.table('jovenes').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_jovenes_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_jovenes(datos):
-    """Registrar nuevo joven - convertido de obtenerUltimaIdYRegistrarJovenes()"""
+    """Obtener última ID y registrar joven - convertido de obtenerUltimaIdYRegistrarJovenes()"""
     try:
-        # Preparar datos
-        datos['fecha'] = datetime.now().isoformat()
+        # Agregar metadatos
+        datos['fecha_registro'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Jovenes').insert(datos).execute()
+        # Insertar joven
+        response = supabase.table('jovenes').insert(datos).execute()
         
         if response.data:
-            nuevo_joven = response.data[0]
+            joven = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Jovenes',
-                'id_registro': nuevo_joven['id'],
-                'datos_nuevos': nuevo_joven
-            })
+            registrar_cambio_historial(
+                'jovenes',
+                joven['id'],
+                'INSERT',
+                None,
+                joven
+            )
             
-            return nuevo_joven['id']
-        
-        raise ValueError('Error al crear joven')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_jovenes: {str(error)}')
-        raise error
+            return joven
+        else:
+            raise ValueError('Error al registrar joven')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_jovenes: {e}")
+        raise e
 
 def editar_jovenes(datos):
     """Editar joven - convertido de editarJovenes()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_jovenes_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('jovenes').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Jovenes').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('jovenes').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             joven_actualizado = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Jovenes',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': joven_actualizado
-            })
+            registrar_cambio_historial(
+                'jovenes',
+                joven_actualizado['id'],
+                'UPDATE',
+                datos_anteriores,
+                joven_actualizado
+            )
             
             return joven_actualizado
-        
-        raise ValueError('Error al actualizar joven')
-    except Exception as error:
-        logger.error(f'Error en editar_jovenes: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar joven')
+            
+    except Exception as e:
+        print(f"Error en editar_jovenes: {e}")
+        raise e
 
 def eliminar_jovenes(id):
     """Eliminar joven - convertido de eliminarJovenes()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_jovenes_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('jovenes').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Jovenes').delete().eq('id', id).execute()
+        # Eliminar joven
+        response = supabase.table('jovenes').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Jovenes',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'jovenes',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar joven')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar joven')
+            
+    except Exception as e:
+        print(f"Error en eliminar_jovenes: {e}")
+        raise e
 
 def buscar_finanzas_por_id(id=None):
-    """Buscar finanzas por ID - convertido de buscarFinanzasPorId()"""
+    """Buscar finanza por ID o todas - convertido de buscarFinanzasPorId()"""
     try:
         if id:
-            # Buscar registro financiero específico
-            response = supabase.table('Finanzas').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('finanzas').select('*').eq('id', id).execute()
         else:
-            # Obtener todos los registros financieros
-            response = supabase.table('Finanzas').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_finanzas_por_id: {str(error)}')
-        raise error
+            response = supabase.table('finanzas').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_finanzas_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_finanzas(datos):
-    """Registrar nuevo registro financiero - convertido de obtenerUltimaIdYRegistrarFinanzas()"""
+    """Obtener última ID y registrar finanza - convertido de obtenerUltimaIdYRegistrarFinanzas()"""
     try:
-        # Preparar datos
-        datos['fecha_de_registro'] = datetime.now().isoformat()
+        # Agregar metadatos
+        datos['fecha_registro'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Finanzas').insert(datos).execute()
+        # Insertar finanza
+        response = supabase.table('finanzas').insert(datos).execute()
         
         if response.data:
-            nuevo_registro = response.data[0]
+            finanza = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Finanzas',
-                'id_registro': nuevo_registro['id'],
-                'datos_nuevos': nuevo_registro
-            })
+            registrar_cambio_historial(
+                'finanzas',
+                finanza['id'],
+                'INSERT',
+                None,
+                finanza
+            )
             
-            return nuevo_registro['id']
-        
-        raise ValueError('Error al crear registro financiero')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_finanzas: {str(error)}')
-        raise error
+            return finanza
+        else:
+            raise ValueError('Error al registrar finanza')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_finanzas: {e}")
+        raise e
 
 def editar_finanzas(datos):
-    """Editar registro financiero - convertido de editarFinanzas()"""
+    """Editar finanza - convertido de editarFinanzas()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_finanzas_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('finanzas').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha_de_registro'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Finanzas').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('finanzas').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
-            registro_actualizado = response.data[0]
+            finanza_actualizada = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Finanzas',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': registro_actualizado
-            })
+            registrar_cambio_historial(
+                'finanzas',
+                finanza_actualizada['id'],
+                'UPDATE',
+                datos_anteriores,
+                finanza_actualizada
+            )
             
-            return registro_actualizado
-        
-        raise ValueError('Error al actualizar registro financiero')
-    except Exception as error:
-        logger.error(f'Error en editar_finanzas: {str(error)}')
-        raise error
+            return finanza_actualizada
+        else:
+            raise ValueError('Error al actualizar finanza')
+            
+    except Exception as e:
+        print(f"Error en editar_finanzas: {e}")
+        raise e
 
 def eliminar_finanzas(id):
-    """Eliminar registro financiero - convertido de eliminarFinanzas()"""
+    """Eliminar finanza - convertido de eliminarFinanzas()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_finanzas_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('finanzas').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Finanzas').delete().eq('id', id).execute()
+        # Eliminar finanza
+        response = supabase.table('finanzas').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Finanzas',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'finanzas',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar registro financiero')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar finanza')
+            
+    except Exception as e:
+        print(f"Error en eliminar_finanzas: {e}")
+        raise e

@@ -14,6 +14,25 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase: Client = create_client(supabase_url, supabase_key)
 
+def registrar_cambio_historial(tabla, id_registro, accion, datos_anteriores=None, datos_nuevos=None):
+    """Registrar cambio en el historial"""
+    try:
+        nuevo_registro = {
+            'tabla': tabla,
+            'id_registro': id_registro,
+            'accion': accion,
+            'datos_anteriores': datos_anteriores,
+            'datos_nuevos': datos_nuevos,
+            'usuario': session.get('user_email', 'sistema'),
+            'fecha_cambio': datetime.now().isoformat()
+        }
+        
+        response = supabase.table('historial_cambios').insert(nuevo_registro).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error en registrar_cambio_historial: {e}")
+        return None
+
 # Esquemas de validación convertidos de JavaScript a Python
 ESQUEMAS = {
     'Predicadores': {
@@ -84,13 +103,36 @@ def check_access():
             return False
         
         # Buscar en tabla de administradores en Supabase
-        response = supabase.table('Administradores').select('*').eq('email', user_email).execute()
+        response = supabase.table('administradores').select('*').eq('email', user_email).execute()
         
         if response.data:
             return True
         return False
     except Exception as e:
         logger.error(f'Error en check_access: {str(e)}')
+        return False
+
+def verificar_permiso(user_email, permiso):
+    """Verificar si un usuario tiene un permiso específico - convertido de verificarPermiso()"""
+    try:
+        response = supabase.table('administradores').select('*').eq('email', user_email).execute()
+        
+        if response.data:
+            admin = response.data[0]
+            rol = admin.get('rol', 'Usuario')
+            
+            # Definir permisos por rol
+            permisos_por_rol = {
+                'Super Admin': ['agregarAdmin', 'eliminarAdmin', 'verHistorial', 'generarInformes'],
+                'Admin': ['verHistorial', 'generarInformes'],
+                'Usuario': []
+            }
+            
+            return permiso in permisos_por_rol.get(rol, [])
+        
+        return False
+    except Exception as e:
+        print(f"Error en verificar_permiso: {e}")
         return False
 
 def is_admin_by_name(nombre, codigo):
@@ -121,96 +163,45 @@ def get_admin_role(nombre):
 def is_admin(email, codigo, nombre):
     """Verificar si un email está en la lista de administradores - convertido de isAdmin()"""
     try:
-        logger.info(f'Iniciando verificación para: {email}, {nombre}')
+        # Encriptar el código para comparar
+        codigo_encriptado = hashlib.sha256(codigo.encode()).hexdigest()
         
-        # Buscar en Supabase
-        response = supabase.table('Administradores').select('*').eq('email', email.lower()).execute()
+        response = supabase.table('administradores').select('*').eq('email', email.lower()).eq('codigo', codigo_encriptado).eq('estado', 'Activo').execute()
         
-        if not response.data:
-            logger.info('No se encontró el usuario en Administradores')
-            return False
-        
-        admin_data = response.data[0]
-        logger.info(f'Datos encontrados: {admin_data}')
-        
-        # Verificar coincidencia completa
-        if (admin_data.get('email', '').lower() == email.lower() and 
-            admin_data.get('codigo') == codigo and
-            admin_data.get('nombre', '').lower() == nombre.lower()):
-            logger.info('¡Coincidencia encontrada! Acceso permitido')
-            return True
-        
-        logger.info('No se encontró coincidencia. Acceso denegado')
-        return False
-    except Exception as e:
-        logger.error(f'Error en verificación: {str(e)}')
-        return False
-
-def is_super_admin(email):
-    """Verificar si un usuario es Super Admin - convertido de isSuperAdmin()"""
-    try:
-        response = supabase.table('Administradores').select('*').eq('email', email.lower()).eq('rol', 'Super Admin').execute()
         return len(response.data) > 0
     except Exception as e:
-        logger.error(f'Error al verificar super admin: {str(e)}')
+        print(f"Error en is_admin: {e}")
         return False
 
-def verificar_rol(email):
-    """Verificar rol del usuario - convertido de verificarRol()"""
+def is_super_admin(user_email):
+    """Verificar si un usuario es super administrador - convertido de isSuperAdmin()"""
     try:
-        response = supabase.table('Administradores').select('rol').eq('email', email.lower()).execute()
-        if response.data:
-            return response.data[0].get('rol')
-        return None
-    except Exception as e:
-        logger.error(f'Error al verificar rol: {str(e)}')
-        raise ValueError(f'Error al verificar rol: {str(e)}')
-
-def verificar_permiso(email, operacion):
-    """Verificar permisos específicos - convertido de verificarPermiso()"""
-    try:
-        rol = verificar_rol(email)
-        if not rol:
-            return False
-
-        permisos = {
-            'Super Admin': ['CRUD_ADMINS', 'CRUD_ALL'],
-            'Admin': ['CRUD_BASIC']
-        }
-
-        permisos_rol = permisos.get(rol, [])
+        response = supabase.table('administradores').select('*').eq('email', user_email.lower()).eq('rol', 'Super Admin').execute()
         
-        operaciones_permitidas = {
-            'agregarAdmin': ['CRUD_ADMINS'],
-            'eliminarAdmin': ['CRUD_ADMINS'],
-            'editarAdmin': ['CRUD_ADMINS'],
-            'verAdmins': ['CRUD_ADMINS'],
-            'crud_basico': ['CRUD_BASIC', 'CRUD_ALL']
-        }
-
-        permisos_necesarios = operaciones_permitidas.get(operacion, [])
-        return any(p in permisos_rol for p in permisos_necesarios)
+        return len(response.data) > 0
     except Exception as e:
-        logger.error(f'Error al verificar permiso: {str(e)}')
+        print(f"Error en is_super_admin: {e}")
         return False
+
+def get_admin_role_by_email(user_email):
+    """Obtener el rol de un administrador por email - convertido de getAdminRole()"""
+    try:
+        response = supabase.table('administradores').select('rol').eq('email', user_email.lower()).execute()
+        
+        if response.data:
+            return response.data[0]['rol']
+        return 'Usuario'
+    except Exception as e:
+        print(f"Error en get_admin_role_by_email: {e}")
+        return 'Usuario'
 
 def obtener_admins():
     """Obtener lista de administradores - convertido de obtenerAdmins()"""
     try:
-        user_email = session.get('user_email')
-        if not is_super_admin(user_email):
-            raise ValueError('Solo los Super Administradores pueden ver la lista de administradores')
-        
-        response = supabase.table('Administradores').select('email, nombre, rol, fecha_agregado').execute()
-        
-        return [{
-            'email': row['email'],
-            'nombre': row['nombre'],
-            'rol': row['rol'],
-            'fecha': row.get('fecha_agregado')
-        } for row in response.data]
+        response = supabase.table('administradores').select('email, nombre, rol, fecha_creacion').execute()
+        return response.data
     except Exception as e:
-        logger.error(f'Error al obtener admins: {str(e)}')
+        print(f"Error en obtener_admins: {e}")
         raise e
 
 def agregar_admin(nombre, rol, codigo):

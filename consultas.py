@@ -1,3 +1,4 @@
+from flask import session, request, jsonify
 from supabase import create_client, Client
 import os
 from datetime import datetime
@@ -12,11 +13,30 @@ supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase: Client = create_client(supabase_url, supabase_key)
 
+def registrar_cambio_historial(tabla, id_registro, accion, datos_anteriores=None, datos_nuevos=None):
+    """Registrar cambio en el historial"""
+    try:
+        nuevo_registro = {
+            'tabla': tabla,
+            'id_registro': id_registro,
+            'accion': accion,
+            'datos_anteriores': datos_anteriores,
+            'datos_nuevos': datos_nuevos,
+            'usuario': session.get('user_email', 'sistema'),
+            'fecha_cambio': datetime.now().isoformat()
+        }
+        
+        response = supabase.table('historial_cambios').insert(nuevo_registro).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error en registrar_cambio_historial: {e}")
+        return None
+
 def ver_historial(tabla='', estado='', usuario=''):
     """Ver historial con filtros - convertido de verHistorial()"""
     try:
         # Construir consulta base
-        query = supabase.table('Historial_Cambios').select('*')
+        query = supabase.table('historial_cambios').select('*')
         
         # Aplicar filtros si existen
         if tabla:
@@ -65,7 +85,7 @@ def ver_historial(tabla='', estado='', usuario=''):
 def obtener_registro_historial(id_historial):
     """Obtener registro específico del historial - convertido de obtenerRegistroHistorial()"""
     try:
-        response = supabase.table('Historial_Cambios').select('*').eq('id', id_historial).execute()
+        response = supabase.table('historial_cambios').select('*').eq('id', id_historial).execute()
         
         if not response.data:
             logger.info(f'No se encontró el registro con ID: {id_historial}')
@@ -131,7 +151,7 @@ def revertir_edicion(id_historial):
                 'datos_nuevos': datos_anteriores
             }
             
-            supabase.table('Historial_Cambios').insert(nuevo_registro_historial).execute()
+            supabase.table('historial_cambios').insert(nuevo_registro_historial).execute()
             
             return {
                 'success': True,
@@ -199,7 +219,7 @@ def restaurar_registro(id_historial):
                 'datos_nuevos': datos_para_restaurar
             }
             
-            supabase.table('Historial_Cambios').insert(nuevo_registro_historial).execute()
+            supabase.table('historial_cambios').insert(nuevo_registro_historial).execute()
             
             return {
                 'success': True,

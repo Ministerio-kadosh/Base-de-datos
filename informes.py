@@ -1,3 +1,4 @@
+from flask import session, request, jsonify
 from supabase import create_client, Client
 import os
 from datetime import datetime
@@ -30,7 +31,7 @@ def crear_informe(titulo, descripcion, consultas, formato='json'):
         }
         
         # Guardar en Supabase
-        response = supabase.table('Informes').insert(datos_informe).execute()
+        response = supabase.table('informes').insert(datos_informe).execute()
         
         if response.data:
             return response.data[0]
@@ -43,7 +44,7 @@ def crear_informe(titulo, descripcion, consultas, formato='json'):
 def obtener_informe_por_id(id_informe):
     """Obtener un informe específico por ID"""
     try:
-        response = supabase.table('Informes').select('*').eq('id', id_informe).eq('estado', 'activo').execute()
+        response = supabase.table('informes').select('*').eq('id', id_informe).eq('estado', 'activo').execute()
         
         if response.data:
             return response.data[0]
@@ -56,7 +57,7 @@ def obtener_informe_por_id(id_informe):
 def obtener_informes():
     """Obtener todos los informes - convertido de funciones de informes"""
     try:
-        response = supabase.table('Informes').select('*').eq('estado', 'activo').execute()
+        response = supabase.table('informes').select('*').eq('estado', 'activo').execute()
         return response.data
     except Exception as error:
         logger.error(f'Error en obtener_informes: {str(error)}')
@@ -66,7 +67,7 @@ def eliminar_informe(id_informe):
     """Eliminar informe - convertido de funciones de informes"""
     try:
         # Soft delete - marcar como inactivo
-        response = supabase.table('Informes').update({'estado': 'inactivo'}).eq('id', id_informe).execute()
+        response = supabase.table('informes').update({'estado': 'inactivo'}).eq('id', id_informe).execute()
         
         if response.data:
             return True
@@ -80,7 +81,7 @@ def generar_informe(id_informe):
     """Generar contenido del informe ejecutando las consultas"""
     try:
         # Obtener información del informe
-        response = supabase.table('Informes').select('*').eq('id', id_informe).execute()
+        response = supabase.table('informes').select('*').eq('id', id_informe).execute()
         
         if not response.data:
             raise ValueError('Informe no encontrado')
@@ -180,7 +181,7 @@ def descargar_informe(id_informe, formato='json'):
         contenido = generar_informe(id_informe)
         
         # Obtener información del informe
-        response = supabase.table('Informes').select('titulo').eq('id', id_informe).execute()
+        response = supabase.table('informes').select('titulo').eq('id', id_informe).execute()
         titulo = response.data[0]['titulo'] if response.data else 'informe'
         
         # Generar nombre de archivo
@@ -204,7 +205,7 @@ def compartir_informe(id_informe, destinatarios, asunto=None):
         contenido = generar_informe(id_informe)
         
         # Obtener información del informe
-        response = supabase.table('Informes').select('titulo, descripcion').eq('id', id_informe).execute()
+        response = supabase.table('informes').select('titulo, descripcion').eq('id', id_informe).execute()
         informe = response.data[0] if response.data else {}
         
         # Preparar datos para envío
@@ -226,7 +227,7 @@ def generar_informe_predicadores(filtros=None):
     """Generar informe específico de predicadores"""
     try:
         # Consulta base de predicadores
-        datos_predicadores = consulta_personalizada('Predicadores', filtros)
+        datos_predicadores = consulta_personalizada('predicadores', filtros)
         
         # Estadísticas
         total_predicadores = len(datos_predicadores)
@@ -268,7 +269,7 @@ def generar_informe_finanzas(fecha_inicio=None, fecha_fin=None, limite=None):
             filtros['fecha']['lte'] = fecha_fin
         
         # Obtener datos financieros
-        datos_finanzas = consulta_personalizada('Finanzas', filtros)
+        datos_finanzas = consulta_personalizada('finanzas', filtros)
         
         # Aplicar límite si se especifica
         if limite:
@@ -335,7 +336,7 @@ def generar_informe_asistencias(fecha_inicio=None, fecha_fin=None, limite=None):
             filtros['fecha']['lte'] = fecha_fin
         
         # Obtener datos de asistencias
-        datos_asistencias = consulta_personalizada('Asistencias', filtros)
+        datos_asistencias = consulta_personalizada('asistencias', filtros)
         
         # Aplicar límite si se especifica
         if limite:
@@ -391,7 +392,7 @@ def guardar_informe_generado(informe_data, nombre_archivo=None):
         }
         
         # Guardar en tabla de informes generados
-        response = supabase.table('Informes_Generados').insert(datos_guardado).execute()
+        response = supabase.table('informes_generados').insert(datos_guardado).execute()
         
         if response.data:
             return response.data[0]
@@ -406,8 +407,8 @@ def generar_informe_actividades(fecha_inicio=None, fecha_fin=None, limite=None):
     """Generar informe de actividades - convertido de funciones de informes"""
     try:
         # Obtener datos de actividades (reuniones y eventos del calendario)
-        response_reuniones = supabase.table('Reuniones').select('*').execute()
-        response_calendario = supabase.table('Calendario').select('*').execute()
+        response_reuniones = supabase.table('reuniones').select('*').execute()
+        response_calendario = supabase.table('calendario').select('*').execute()
         
         reuniones = response_reuniones.data if response_reuniones.data else []
         eventos = response_calendario.data if response_calendario.data else []
@@ -480,27 +481,27 @@ def generar_informe_resumen_general(filtros=None, limite=None):
         estadisticas = {}
         
         # Predicadores
-        response_predicadores = supabase.table('Predicadores').select('*').execute()
+        response_predicadores = supabase.table('predicadores').select('*').execute()
         total_predicadores = len(response_predicadores.data) if response_predicadores.data else 0
         estadisticas['predicadores'] = total_predicadores
         
         # Jóvenes
-        response_jovenes = supabase.table('Jovenes').select('*').execute()
+        response_jovenes = supabase.table('jovenes').select('*').execute()
         total_jovenes = len(response_jovenes.data) if response_jovenes.data else 0
         estadisticas['jovenes'] = total_jovenes
         
         # Reuniones
-        response_reuniones = supabase.table('Reuniones').select('*').execute()
+        response_reuniones = supabase.table('reuniones').select('*').execute()
         total_reuniones = len(response_reuniones.data) if response_reuniones.data else 0
         estadisticas['reuniones'] = total_reuniones
         
         # Asistencias
-        response_asistencias = supabase.table('Asistencias').select('*').execute()
+        response_asistencias = supabase.table('asistencias').select('*').execute()
         total_asistencias = len(response_asistencias.data) if response_asistencias.data else 0
         estadisticas['asistencias'] = total_asistencias
         
         # Finanzas
-        response_finanzas = supabase.table('Finanzas').select('*').execute()
+        response_finanzas = supabase.table('finanzas').select('*').execute()
         total_finanzas = len(response_finanzas.data) if response_finanzas.data else 0
         estadisticas['finanzas'] = total_finanzas
         

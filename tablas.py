@@ -1,3 +1,4 @@
+from flask import session, request, jsonify
 from supabase import create_client, Client
 import os
 from datetime import datetime
@@ -23,364 +24,340 @@ ESTADOS_HISTORIAL = {
     'INVALIDO': 'Inválido'
 }
 
-def registrar_historial(datos):
-    """Registrar cambios en el historial - convertido de registrarHistorial()"""
+def registrar_cambio_historial(tabla, id_registro, accion, datos_anteriores=None, datos_nuevos=None):
+    """Registrar cambio en el historial"""
     try:
-        # Mapear operación a estado
-        estado_map = {
-            'CREATE': 'Creado',
-            'UPDATE': 'Editado',
-            'DELETE': 'Eliminado'
-        }
-
-        estado = estado_map.get(datos['operacion'], datos['operacion'])
-        
-        # Crear nuevo registro
         nuevo_registro = {
-            'fecha': datetime.now().isoformat(),
-            'usuario': datos.get('usuario', 'sistema'),
-            'estado': estado,
-            'tabla': datos['tabla'],
-            'id_registro': datos['id_registro'],
-            'datos_anteriores': datos.get('datos_anteriores', {}),
-            'datos_nuevos': datos.get('datos_nuevos', {})
+            'tabla': tabla,
+            'id_registro': id_registro,
+            'accion': accion,
+            'datos_anteriores': datos_anteriores,
+            'datos_nuevos': datos_nuevos,
+            'usuario': session.get('user_email', 'sistema'),
+            'fecha_cambio': datetime.now().isoformat()
         }
         
-        # Insertar en tabla de historial
-        response = supabase.table('Historial_Cambios').insert(nuevo_registro).execute()
+        response = supabase.table('historial_cambios').insert(nuevo_registro).execute()
         return response.data[0] if response.data else None
-        
-    except Exception as error:
-        logger.error(f'Error al registrar en historial: {str(error)}')
-        raise error
+    except Exception as e:
+        print(f"Error en registrar_cambio_historial: {e}")
+        return None
 
 def buscar_predicadores_por_id(id=None):
-    """Buscar predicadores por ID - convertido de buscarPredicadoresPorId()"""
+    """Buscar predicadores por ID o todos - convertido de buscarPredicadoresPorId()"""
     try:
         if id:
-            # Buscar predicador específico
-            response = supabase.table('Predicadores').select('*').eq('id', id).neq('estado', 'eliminado').execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('predicadores').select('*').eq('id', id).neq('estado', 'eliminado').execute()
         else:
-            # Obtener todos los predicadores activos
-            response = supabase.table('Predicadores').select('*').neq('estado', 'eliminado').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_predicadores_por_id: {str(error)}')
-        raise error
+            response = supabase.table('predicadores').select('*').neq('estado', 'eliminado').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_predicadores_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_predicadores(datos):
-    """Registrar nuevo predicador - convertido de obtenerUltimaIdYRegistrarPredicadores()"""
+    """Obtener última ID y registrar predicador - convertido de obtenerUltimaIdYRegistrarPredicadores()"""
     try:
-        # Validar datos
-        validar_datos(datos, ESQUEMAS['Predicadores'])
-        
-        # Preparar datos
+        # Agregar metadatos
+        datos['estado'] = 'Activo'
         datos['fecha'] = datetime.now().isoformat()
-        datos['estado'] = ESTADOS_HISTORIAL['CREADO']
-        datos['usuario'] = datos.get('usuario', 'sistema')
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Predicadores').insert(datos).execute()
+        # Insertar predicador
+        response = supabase.table('predicadores').insert(datos).execute()
         
         if response.data:
-            nuevo_predicador = response.data[0]
+            predicador = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Predicadores',
-                'id_registro': nuevo_predicador['id'],
-                'datos_nuevos': nuevo_predicador,
-                'usuario': datos['usuario']
-            })
+            registrar_cambio_historial(
+                'predicadores',
+                predicador['id'],
+                'INSERT',
+                None,
+                predicador
+            )
             
-            return nuevo_predicador
-        
-        raise ValueError('Error al crear predicador')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_predicadores: {str(error)}')
-        raise error
+            return predicador
+        else:
+            raise ValueError('Error al registrar predicador')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_predicadores: {e}")
+        raise e
 
 def editar_predicadores(datos):
     """Editar predicador - convertido de editarPredicadores()"""
     try:
-        # Validar datos
-        validar_datos(datos, ESQUEMAS['Predicadores'])
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('predicadores').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Obtener datos anteriores
-        datos_anteriores = buscar_predicadores_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError('No se encontró el predicador a editar')
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Preparar datos actualizados
-        datos['fecha'] = datetime.now().isoformat()
-        datos['estado'] = ESTADOS_HISTORIAL['EDITADO']
-        datos['usuario'] = datos.get('usuario', 'sistema')
-        
-        # Actualizar en Supabase
-        response = supabase.table('Predicadores').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('predicadores').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             predicador_actualizado = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Predicadores',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': predicador_actualizado,
-                'usuario': datos['usuario']
-            })
+            registrar_cambio_historial(
+                'predicadores',
+                predicador_actualizado['id'],
+                'UPDATE',
+                datos_anteriores,
+                predicador_actualizado
+            )
             
             return predicador_actualizado
-        
-        raise ValueError('Error al actualizar predicador')
-    except Exception as error:
-        logger.error(f'Error en editar_predicadores: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar predicador')
+            
+    except Exception as e:
+        print(f"Error en editar_predicadores: {e}")
+        raise e
 
 def eliminar_predicadores(id):
     """Eliminar predicador (soft delete) - convertido de eliminarPredicadores()"""
     try:
-        # Obtener datos actuales
-        datos_actuales = buscar_predicadores_por_id(id)
-        if not datos_actuales:
-            raise ValueError('No se encontró el predicador a eliminar')
+        # Obtener datos para historial
+        response_anterior = supabase.table('predicadores').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Soft delete - marcar como eliminado
+        # Soft delete
         datos_actualizados = {
-            'estado': ESTADOS_HISTORIAL['ELIMINADO'],
-            'fecha': datetime.now().isoformat(),
-            'usuario': datos_actuales.get('usuario', 'sistema')
+            'estado': 'eliminado',
+            'usuario': session.get('user_email', 'sistema'),
+            'fecha_eliminacion': datetime.now().isoformat()
         }
         
-        # Actualizar en Supabase
-        response = supabase.table('Predicadores').update(datos_actualizados).eq('id', id).execute()
+        response = supabase.table('predicadores').update(datos_actualizados).eq('id', id).execute()
         
         if response.data:
-            predicador_eliminado = response.data[0]
-            
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Predicadores',
-                'id_registro': id,
-                'datos_anteriores': datos_actuales,
-                'datos_nuevos': predicador_eliminado,
-                'usuario': datos_actualizados['usuario']
-            })
+            registrar_cambio_historial(
+                'predicadores',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar predicador')
-    except Exception as error:
-        logger.error(f'Error en eliminar_predicadores: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar predicador')
+            
+    except Exception as e:
+        print(f"Error en eliminar_predicadores: {e}")
+        raise e
 
 def buscar_reuniones_por_id(id=None):
-    """Buscar reuniones por ID - convertido de buscarReunionesPorId()"""
+    """Buscar reuniones por ID o todas - convertido de buscarReunionesPorId()"""
     try:
         if id:
-            # Buscar reunión específica
-            response = supabase.table('Reuniones').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('reuniones').select('*').eq('id', id).execute()
         else:
-            # Obtener todas las reuniones
-            response = supabase.table('Reuniones').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_reuniones_por_id: {str(error)}')
-        raise error
+            response = supabase.table('reuniones').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_reuniones_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_reuniones(datos):
-    """Registrar nueva reunión - convertido de obtenerUltimaIdYRegistrarReuniones()"""
+    """Obtener última ID y registrar reunión - convertido de obtenerUltimaIdYRegistrarReuniones()"""
     try:
-        # Preparar datos
+        # Agregar metadatos
         datos['fecha'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Reuniones').insert(datos).execute()
+        # Insertar reunión
+        response = supabase.table('reuniones').insert(datos).execute()
         
         if response.data:
-            nueva_reunion = response.data[0]
+            reunion = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Reuniones',
-                'id_registro': nueva_reunion['id'],
-                'datos_nuevos': nueva_reunion
-            })
+            registrar_cambio_historial(
+                'reuniones',
+                reunion['id'],
+                'INSERT',
+                None,
+                reunion
+            )
             
-            return nueva_reunion['id']
-        
-        raise ValueError('Error al crear reunión')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_reuniones: {str(error)}')
-        raise error
+            return reunion['id']
+        else:
+            raise ValueError('Error al registrar reunión')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_reuniones: {e}")
+        raise e
 
 def editar_reuniones(datos):
     """Editar reunión - convertido de editarReuniones()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_reuniones_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('reuniones').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Reuniones').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('reuniones').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             reunion_actualizada = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Reuniones',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': reunion_actualizada
-            })
+            registrar_cambio_historial(
+                'reuniones',
+                reunion_actualizada['id'],
+                'UPDATE',
+                datos_anteriores,
+                reunion_actualizada
+            )
             
             return reunion_actualizada
-        
-        raise ValueError('Error al actualizar reunión')
-    except Exception as error:
-        logger.error(f'Error en editar_reuniones: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar reunión')
+            
+    except Exception as e:
+        print(f"Error en editar_reuniones: {e}")
+        raise e
 
 def eliminar_reuniones(id):
     """Eliminar reunión - convertido de eliminarReuniones()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_reuniones_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('reuniones').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Reuniones').delete().eq('id', id).execute()
+        # Eliminar reunión
+        response = supabase.table('reuniones').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Reuniones',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'reuniones',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar reunión')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar reunión')
+            
+    except Exception as e:
+        print(f"Error en eliminar_reuniones: {e}")
+        raise e
 
 def buscar_calendario_por_id(id=None):
-    """Buscar calendario por ID - convertido de buscarCalendarioPorId()"""
+    """Buscar calendario por ID o todo - convertido de buscarCalendarioPorId()"""
     try:
         if id:
-            # Buscar evento específico
-            response = supabase.table('Calendario').select('*').eq('id', id).execute()
-            return response.data[0] if response.data else None
+            response = supabase.table('calendario').select('*').eq('id', id).execute()
         else:
-            # Obtener todos los eventos
-            response = supabase.table('Calendario').select('*').execute()
-            return response.data
-    except Exception as error:
-        logger.error(f'Error en buscar_calendario_por_id: {str(error)}')
-        raise error
+            response = supabase.table('calendario').select('*').execute()
+        
+        return response.data
+    except Exception as e:
+        print(f"Error en buscar_calendario_por_id: {e}")
+        raise e
 
 def obtener_ultima_id_y_registrar_calendario(datos):
-    """Registrar nuevo evento - convertido de obtenerUltimaIdYRegistrarCalendario()"""
+    """Obtener última ID y registrar evento de calendario - convertido de obtenerUltimaIdYRegistrarCalendario()"""
     try:
-        # Preparar datos
-        datos['fecha_de_registro'] = datetime.now().isoformat()
+        # Agregar metadatos
+        datos['fecha_creacion'] = datetime.now().isoformat()
+        datos['usuario'] = session.get('user_email', 'sistema')
         
-        # Insertar en Supabase
-        response = supabase.table('Calendario').insert(datos).execute()
+        # Insertar evento
+        response = supabase.table('calendario').insert(datos).execute()
         
         if response.data:
-            nuevo_evento = response.data[0]
+            evento = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'CREATE',
-                'tabla': 'Calendario',
-                'id_registro': nuevo_evento['id'],
-                'datos_nuevos': nuevo_evento
-            })
+            registrar_cambio_historial(
+                'calendario',
+                evento['id'],
+                'INSERT',
+                None,
+                evento
+            )
             
-            return nuevo_evento['id']
-        
-        raise ValueError('Error al crear evento')
-    except Exception as error:
-        logger.error(f'Error en obtener_ultima_id_y_registrar_calendario: {str(error)}')
-        raise error
+            return evento['id']
+        else:
+            raise ValueError('Error al registrar evento de calendario')
+            
+    except Exception as e:
+        print(f"Error en obtener_ultima_id_y_registrar_calendario: {e}")
+        raise e
 
 def editar_calendario(datos):
-    """Editar evento - convertido de editarCalendario()"""
+    """Editar evento de calendario - convertido de editarCalendario()"""
     try:
-        # Obtener datos anteriores
-        datos_anteriores = buscar_calendario_por_id(datos['id'])
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {datos["id"]}')
+        # Obtener datos anteriores para historial
+        response_anterior = supabase.table('calendario').select('*').eq('id', datos['id']).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Preparar datos actualizados
-        datos['fecha_de_registro'] = datetime.now().isoformat()
+        # Actualizar datos
+        datos['usuario'] = session.get('user_email', 'sistema')
+        datos['fecha_actualizacion'] = datetime.now().isoformat()
         
-        # Actualizar en Supabase
-        response = supabase.table('Calendario').update(datos).eq('id', datos['id']).execute()
+        response = supabase.table('calendario').update(datos).eq('id', datos['id']).execute()
         
         if response.data:
             evento_actualizado = response.data[0]
             
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'UPDATE',
-                'tabla': 'Calendario',
-                'id_registro': datos['id'],
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': evento_actualizado
-            })
+            registrar_cambio_historial(
+                'calendario',
+                evento_actualizado['id'],
+                'UPDATE',
+                datos_anteriores,
+                evento_actualizado
+            )
             
             return evento_actualizado
-        
-        raise ValueError('Error al actualizar evento')
-    except Exception as error:
-        logger.error(f'Error en editar_calendario: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al actualizar evento de calendario')
+            
+    except Exception as e:
+        print(f"Error en editar_calendario: {e}")
+        raise e
 
 def eliminar_calendario(id):
-    """Eliminar evento - convertido de eliminarCalendario()"""
+    """Eliminar evento de calendario - convertido de eliminarCalendario()"""
     try:
-        # Obtener datos antes de eliminar
-        datos_anteriores = buscar_calendario_por_id(id)
-        if not datos_anteriores:
-            raise ValueError(f'No se encontró el registro con ID: {id}')
+        # Obtener datos para historial
+        response_anterior = supabase.table('calendario').select('*').eq('id', id).execute()
+        datos_anteriores = response_anterior.data[0] if response_anterior.data else None
         
-        # Eliminar de Supabase
-        response = supabase.table('Calendario').delete().eq('id', id).execute()
+        # Eliminar evento
+        response = supabase.table('calendario').delete().eq('id', id).execute()
         
         if response.data:
             # Registrar en historial
-            registrar_historial({
-                'operacion': 'DELETE',
-                'tabla': 'Calendario',
-                'id_registro': id,
-                'datos_anteriores': datos_anteriores,
-                'datos_nuevos': None
-            })
+            registrar_cambio_historial(
+                'calendario',
+                id,
+                'DELETE',
+                datos_anteriores,
+                None
+            )
             
             return True
-        
-        raise ValueError('Error al eliminar evento')
-    except Exception as error:
-        logger.error(f'Error al eliminar: {str(error)}')
-        raise error
+        else:
+            raise ValueError('Error al eliminar evento de calendario')
+            
+    except Exception as e:
+        print(f"Error en eliminar_calendario: {e}")
+        raise e
