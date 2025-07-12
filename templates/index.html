@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Gestión - Login{% endblock %}
+
+{% block content %}
+<!-- Pantalla de Verificación -->
+<div id="verificationScreen">
+    <div id="verificationForm">
+        <h2>Verificación de Acceso</h2>
+        <form onsubmit="verificarAcceso(event)">
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Código de Acceso:</label>
+                <input type="password" name="codigo" required>
+            </div>
+            <div id="verificationError"></div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Verificar Acceso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<header>
+    <h1>Sistema de Gestión</h1>
+    <div id="menu" class="visible">
+        <button class="menu-button" onclick="window.location.href='{{ url_for('tablas') }}'">
+            Ver Tablas
+        </button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('formularios') }}'">Formularios</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('consultas') }}'">Consulta</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('informes') }}'">Informe</button>
+        <button id="btnAdmins" class="menu-button" onclick="window.location.href='{{ url_for('admin') }}'" style="display: none;">Administradores</button>
+        <button class="menu-button" style="background-color: #f44336;" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main>
+    <div id="authMessage">
+        <h2>Bienvenido al Sistema de Gestión</h2>
+        <p>Por favor inicie sesión para continuar.</p>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/sesion.js') }}"></script>
+{% endblock %}

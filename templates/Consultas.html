@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Consultas Personalizadas{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/consultas.css') }}">
+{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Consultas Personalizadas</h1>
+    <div id="menu" class="visible">
+        <button class="menu-button" onclick="window.location.href='{{ url_for('index') }}'">Inicio</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('tablas') }}'">Tablas</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('formularios') }}'">Formularios</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('informes') }}'">Informe</button>
+        <button id="btnAdmins" class="menu-button" onclick="window.location.href='{{ url_for('admin') }}'" style="display: none;">Administradores</button>
+        <button class="menu-button" style="background-color: #f44336;" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main>
+    <div class="consultas-container">
+        <!-- Panel de consultas -->
+        <div class="panel-consultas">
+            <h2>Constructor de Consultas</h2>
+            
+            <!-- Selección de tabla -->
+            <div class="form-group">
+                <label for="tablaSeleccionada">Seleccionar Tabla:</label>
+                <select id="tablaSeleccionada" onchange="cargarCampos()">
+                    <option value="">Seleccione una tabla</option>
+                    <option value="predicadores">Predicadores</option>
+                    <option value="bandeja">Bandeja</option>
+                    <option value="reuniones">Reuniones</option>
+                    <option value="finanzas">Finanzas</option>
+                    <option value="asistencias">Asistencias</option>
+                    <option value="jovenes">Jóvenes</option>
+                    <option value="calendario">Calendario</option>
+                </select>
+            </div>
+
+            <!-- Campos a seleccionar -->
+            <div class="form-group">
+                <label>Campos a mostrar:</label>
+                <div id="camposDisponibles" class="campos-checkbox">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Condiciones WHERE -->
+            <div class="form-group">
+                <label>Condiciones WHERE:</label>
+                <div id="condicionesWhere" class="condiciones-container">
+                    <div class="condicion-fila">
+                        <select class="campo-where">
+                            <option value="">Seleccionar campo</option>
+                        </select>
+                        <select class="operador-where">
+                            <option value="=">=</option>
+                            <option value="!=">!=</option>
+                            <option value=">">></option>
+                            <option value="<"><</option>
+                            <option value=">=">>=</option>
+                            <option value="<="><=</option>
+                            <option value="LIKE">LIKE</option>
+                            <option value="IN">IN</option>
+                        </select>
+                        <input type="text" class="valor-where" placeholder="Valor">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarCondicion(this)">Eliminar</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="agregarCondicion()">Agregar Condición</button>
+            </div>
+
+            <!-- Ordenamiento -->
+            <div class="form-group">
+                <label>Ordenar por:</label>
+                <div id="ordenamiento" class="ordenamiento-container">
+                    <div class="orden-fila">
+                        <select class="campo-orden">
+                            <option value="">Seleccionar campo</option>
+                        </select>
+                        <select class="tipo-orden">
+                            <option value="ASC">Ascendente</option>
+                            <option value="DESC">Descendente</option>
+                        </select>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarOrden(this)">Eliminar</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="agregarOrden()">Agregar Orden</button>
+            </div>
+
+            <!-- Límite de resultados -->
+            <div class="form-group">
+                <label for="limiteResultados">Límite de resultados:</label>
+                <input type="number" id="limiteResultados" value="100" min="1" max="1000">
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="ejecutarConsulta()">Ejecutar Consulta</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarConsulta()">Limpiar</button>
+                <button type="button" class="btn btn-info" onclick="guardarConsulta()">Guardar Consulta</button>
+                <button type="button" class="btn btn-success" onclick="exportarResultados()">Exportar</button>
+            </div>
+        </div>
+
+        <!-- Consultas guardadas -->
+        <div class="consultas-guardadas">
+            <h3>Consultas Guardadas</h3>
+            <div id="listaConsultasGuardadas" class="lista-consultas">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Resultados de la consulta -->
+        <div class="resultados-consulta">
+            <h3>Resultados</h3>
+            <div id="resultadosConsulta" class="tabla-resultados">
+                <p class="mensaje-inicial">Ejecute una consulta para ver los resultados</p>
+            </div>
+        </div>
+
+        <!-- SQL generado -->
+        <div class="sql-generado">
+            <h3>SQL Generado</h3>
+            <div class="sql-container">
+                <pre id="sqlGenerado" class="sql-code">-- El SQL se generará automáticamente</pre>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarSQL()">Copiar SQL</button>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/consultas_select.js') }}"></script>
+{% endblock %}

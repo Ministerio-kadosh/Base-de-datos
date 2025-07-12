@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Informes y Reportes{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/informes.css') }}">
+{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Informes y Reportes</h1>
+    <div id="menu" class="visible">
+        <button class="menu-button" onclick="window.location.href='{{ url_for('index') }}'">Inicio</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('tablas') }}'">Tablas</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('formularios') }}'">Formularios</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('consultas') }}'">Consulta</button>
+        <button id="btnAdmins" class="menu-button" onclick="window.location.href='{{ url_for('admin') }}'" style="display: none;">Administradores</button>
+        <button class="menu-button" style="background-color: #f44336;" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main>
+    <div class="informes-container">
+        <!-- Panel de configuración de informes -->
+        <div class="panel-informes">
+            <h2>Generador de Informes</h2>
+            
+            <!-- Tipo de informe -->
+            <div class="form-group">
+                <label for="tipoInforme">Tipo de Informe:</label>
+                <select id="tipoInforme" onchange="cambiarTipoInforme()">
+                    <option value="">Seleccione un tipo de informe</option>
+                    <option value="resumen">Resumen General</option>
+                    <option value="financiero">Reporte Financiero</option>
+                    <option value="asistencias">Reporte de Asistencias</option>
+                    <option value="actividades">Reporte de Actividades</option>
+                    <option value="personalizado">Informe Personalizado</option>
+                </select>
+            </div>
+
+            <!-- Período de tiempo -->
+            <div class="form-group">
+                <label for="periodoInforme">Período:</label>
+                <select id="periodoInforme">
+                    <option value="mes">Este Mes</option>
+                    <option value="trimestre">Este Trimestre</option>
+                    <option value="semestre">Este Semestre</option>
+                    <option value="anio">Este Año</option>
+                    <option value="personalizado">Período Personalizado</option>
+                </select>
+            </div>
+
+            <!-- Fechas personalizadas -->
+            <div id="fechasPersonalizadas" class="fechas-personalizadas" style="display: none;">
+                <div class="form-group">
+                    <label for="fechaInicio">Fecha de Inicio:</label>
+                    <input type="date" id="fechaInicio">
+                </div>
+                <div class="form-group">
+                    <label for="fechaFin">Fecha de Fin:</label>
+                    <input type="date" id="fechaFin">
+                </div>
+            </div>
+
+            <!-- Filtros adicionales -->
+            <div class="form-group">
+                <label>Filtros Adicionales:</label>
+                <div class="filtros-container">
+                    <div class="filtro-item">
+                        <input type="checkbox" id="filtroActivos" checked>
+                        <label for="filtroActivos">Solo registros activos</label>
+                    </div>
+                    <div class="filtro-item">
+                        <input type="checkbox" id="filtroEliminados">
+                        <label for="filtroEliminados">Incluir eliminados</label>
+                    </div>
+                    <div class="filtro-item">
+                        <input type="checkbox" id="filtroHistorial">
+                        <label for="filtroHistorial">Incluir historial</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formato de exportación -->
+            <div class="form-group">
+                <label>Formato de Exportación:</label>
+                <div class="formatos-container">
+                    <div class="formato-item">
+                        <input type="radio" id="formatoPDF" name="formato" value="pdf" checked>
+                        <label for="formatoPDF">PDF</label>
+                    </div>
+                    <div class="formato-item">
+                        <input type="radio" id="formatoExcel" name="formato" value="excel">
+                        <label for="formatoExcel">Excel</label>
+                    </div>
+                    <div class="formato-item">
+                        <input type="radio" id="formatoCSV" name="formato" value="csv">
+                        <label for="formatoCSV">CSV</label>
+                    </div>
+                    <div class="formato-item">
+                        <input type="radio" id="formatoHTML" name="formato" value="html">
+                        <label for="formatoHTML">HTML</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" onclick="generarInforme()">Generar Informe</button>
+                <button type="button" class="btn btn-secondary" onclick="vistaPrevia()">Vista Previa</button>
+                <button type="button" class="btn btn-info" onclick="guardarPlantilla()">Guardar Plantilla</button>
+                <button type="button" class="btn btn-success" onclick="enviarPorEmail()">Enviar por Email</button>
+            </div>
+        </div>
+
+        <!-- Plantillas guardadas -->
+        <div class="plantillas-guardadas">
+            <h3>Plantillas Guardadas</h3>
+            <div id="listaPlantillas" class="lista-plantillas">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Vista previa del informe -->
+        <div class="vista-previa">
+            <h3>Vista Previa</h3>
+            <div id="contenidoPrevia" class="contenido-previa">
+                <p class="mensaje-inicial">Seleccione un tipo de informe y haga clic en "Vista Previa"</p>
+            </div>
+        </div>
+
+        <!-- Estadísticas del informe -->
+        <div class="estadisticas-informe">
+            <h3>Estadísticas</h3>
+            <div id="estadisticasInforme" class="estadisticas-grid">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Historial de informes -->
+        <div class="historial-informes">
+            <h3>Historial de Informes</h3>
+            <div id="historialInformes" class="tabla-historial">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/informes_export.js') }}"></script>
+{% endblock %}

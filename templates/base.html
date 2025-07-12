@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Gestión{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block css %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <div id="authMessage">
+            <h2>Cargando Sistema...</h2>
+            <p>Por favor espere mientras se inicializa la aplicación.</p>
+        </div>
+    </div>
+
+    <!-- Modal No Resultados -->
+    <div id="modalNoResultados" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModalNoResultados()">&times;</span>
+            <h2>No se encontraron registros</h2>
+            <p>No hay registros que mostrar en este momento.</p>
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="cerrarModalNoResultados()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/sesion.js') }}"></script>
+    {% block js %}{% endblock %}
+</body>
+</html> 

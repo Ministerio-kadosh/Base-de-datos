@@ -1,0 +1,490 @@
+/* Estilos específicos para informes y reportes */
+
+.informes-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+/* Panel de informes */
+.panel-informes {
+  background: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1 / -1;
+}
+
+.panel-informes h2 {
+  color: var(--primary-color);
+  margin-bottom: 25px;
+  font-size: 24px;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+/* Fechas personalizadas */
+.fechas-personalizadas {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 20px;
+}
+
+.fechas-personalizadas .form-group {
+  margin-bottom: 15px;
+}
+
+/* Contenedor de filtros */
+.filtros-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.filtro-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.filtro-item:hover {
+  background: #f0f0f0;
+  border-color: var(--primary-color);
+}
+
+.filtro-item input[type="checkbox"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+}
+
+.filtro-item label {
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* Contenedor de formatos */
+.formatos-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.formato-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.formato-item:hover {
+  background: #f0f0f0;
+  border-color: var(--primary-color);
+}
+
+.formato-item input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+}
+
+.formato-item label {
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* Plantillas guardadas */
+.plantillas-guardadas {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1;
+}
+
+.plantillas-guardadas h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.lista-plantillas {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.plantilla-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.plantilla-item:hover {
+  background: #e9ecef;
+  border-color: var(--primary-color);
+}
+
+.plantilla-item .nombre {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 5px;
+}
+
+.plantilla-item .descripcion {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.plantilla-item .acciones {
+  display: flex;
+  gap: 5px;
+}
+
+.plantilla-item .btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* Vista previa */
+.vista-previa {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 2;
+}
+
+.vista-previa h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.contenido-previa {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 15px;
+  background: #fafafa;
+}
+
+.mensaje-inicial {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  font-style: italic;
+}
+
+/* Estadísticas del informe */
+.estadisticas-informe {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1 / -1;
+}
+
+.estadisticas-informe h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.estadisticas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.estadistica-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.estadistica-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.estadistica-card .numero {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.estadistica-card .etiqueta {
+  font-size: 14px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.estadistica-card .descripcion {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* Historial de informes */
+.historial-informes {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1 / -1;
+}
+
+.historial-informes h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.tabla-historial {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+
+.tabla-historial table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabla-historial th {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-historial td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tabla-historial tr:hover {
+  background: #f8f9fa;
+}
+
+.tabla-historial tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* Estados de informe */
+.estado-generando {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.estado-completado {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.estado-error {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+/* Barra de progreso */
+.progreso-informe {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progreso-informe .barra {
+  height: 100%;
+  background: var(--primary-color);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* Responsive */
+@media screen and (max-width: 1200px) {
+  .informes-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .plantillas-guardadas,
+  .vista-previa {
+    grid-column: 1;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .informes-container {
+    padding: 15px;
+  }
+  
+  .panel-informes {
+    padding: 20px;
+  }
+  
+  .panel-informes h2 {
+    font-size: 20px;
+  }
+  
+  .filtros-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .formatos-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .estadisticas-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  
+  .estadistica-card {
+    padding: 15px;
+  }
+  
+  .estadistica-card .numero {
+    font-size: 24px;
+  }
+  
+  .tabla-historial {
+    font-size: 12px;
+  }
+  
+  .tabla-historial th,
+  .tabla-historial td {
+    padding: 8px 6px;
+  }
+}
+
+/* Animaciones */
+.plantilla-item {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.estadistica-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estados de carga */
+.cargando-informe {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-color);
+}
+
+.cargando-informe .spinner {
+  margin: 0 auto 20px;
+}
+
+/* Mensajes de error */
+.error-informe {
+  background: #fee;
+  color: var(--error-color);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--error-color);
+  margin-bottom: 15px;
+}
+
+/* Tooltips para formatos */
+.formato-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.formato-tooltip .tooltiptext {
+  visibility: hidden;
+  width: 150px;
+  background-color: #333;
+  color: var(--white);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -75px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.formato-tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}

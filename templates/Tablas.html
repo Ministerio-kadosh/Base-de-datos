@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Tablas{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tablas.css') }}">
+{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Gestión de Tablas</h1>
+    <div id="menu" class="visible">
+        <button class="menu-button" onclick="window.location.href='{{ url_for('index') }}'">Inicio</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('formularios') }}'">Formularios</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('consultas') }}'">Consulta</button>
+        <button class="menu-button" onclick="window.location.href='{{ url_for('informes') }}'">Informe</button>
+        <button id="btnAdmins" class="menu-button" onclick="window.location.href='{{ url_for('admin') }}'" style="display: none;">Administradores</button>
+        <button class="menu-button" style="background-color: #f44336;" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main>
+    <!-- Administradores -->
+    <div id="formAdmins" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarAdmin(event, this)">
+            <h2>Gestión de Administradores</h2>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Rol:</label>
+                <select name="rol" required>
+                    <option value="Admin">Admin</option>
+                    <option value="Super Admin">Super Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Código de Acceso:</label>
+                <input type="password" name="codigo" required>
+                <small style="color: #666;">Este código será requerido para iniciar sesión</small>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Agregar Admin</button>
+                <button type="button" class="btn btn-primary" onclick="buscarAdmins()">Ver Admins</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarAdmin()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaAdmins"></div>
+    </div>
+
+    <!-- Predicadores -->
+    <div id="formPredicadores" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarPredicadores(event, this)">
+            <h2>Gestión de Predicadores</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="Nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Apellido:</label>
+                <input type="text" name="Apellido" required>
+            </div>
+            <div class="form-group">
+                <label>Numero:</label>
+                <input type="text" name="Numero" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarPredicadores()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarPredicadores()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaPredicadores"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarPredicadores" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalPredicadores()">&times;</span>
+                <h2>Editar Predicadores</h2>
+                <form id="formEditarPredicadores" onsubmit="guardarEdicionPredicadores(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" name="Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellido:</label>
+                        <input type="text" name="Apellido" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Numero:</label>
+                        <input type="text" name="Numero" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalPredicadores()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bandeja -->
+    <div id="formBandeja" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarBandeja(event, this)">
+            <h2>Gestión de Bandeja</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Objetivo:</label>
+                <input type="text" name="Objetivo" required>
+            </div>
+            <div class="form-group">
+                <label>Descripción:</label>
+                <textarea name="Descripcion" required></textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarBandeja()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarBandeja()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaBandeja"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarBandeja" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalBandeja()">&times;</span>
+                <h2>Editar Bandeja</h2>
+                <form id="formEditarBandeja" onsubmit="guardarEdicionBandeja(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Objetivo:</label>
+                        <input type="text" name="Objetivo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripcion:</label>
+                        <textarea name="Descripcion" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalBandeja()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asistencias -->
+    <div id="formAsistencias" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarAsistencias(event, this)">
+            <h2>Gestión de Asistencias</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="Nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Numero:</label>
+                <input type="text" name="Numero" required>
+            </div>
+            <div class="form-group">
+                <label>1er Viernes:</label>
+                <input type="text" name="unoviernes" required>
+            </div>
+            <div class="form-group">
+                <label>2do Viernes:</label>
+                <input type="text" name="dosviernes" required>
+            </div>
+            <div class="form-group">
+                <label>3er Viernes:</label>
+                <input type="text" name="tresViernes" required>
+            </div>
+            <div class="form-group">
+                <label>4to Viernes:</label>
+                <input type="text" name="cuatroviernes" required>
+            </div>
+            <div class="form-group">
+                <label>5to Viernes:</label>
+                <input type="text" name="cincoviernes" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarAsistencias()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarAsistencias()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaAsistencias"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarAsistencias" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalAsistencias()">&times;</span>
+                <h2>Editar Asistencias</h2>
+                <form id="formEditarAsistencias" onsubmit="guardarEdicionAsistencias(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" name="Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Numero:</label>
+                        <input type="text" name="Numero" required>
+                    </div>
+                    <div class="form-group">
+                        <label>1er Viernes:</label>
+                        <input type="text" name="unoviernes" required>
+                    </div>
+                    <div class="form-group">
+                        <label>2do Viernes:</label>
+                        <input type="text" name="dosviernes" required>
+                    </div>
+                    <div class="form-group">
+                        <label>3er Viernes:</label>
+                        <input type="text" name="tresViernes" required>
+                    </div>
+                    <div class="form-group">
+                        <label>4to Viernes:</label>
+                        <input type="text" name="cuatroviernes" required>
+                    </div>
+                    <div class="form-group">
+                        <label>5to Viernes:</label>
+                        <input type="text" name="cincoviernes" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalAsistencias()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jóvenes -->
+    <div id="formJovenes" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarJovenes(event, this)">
+            <h2>Gestión de Jóvenes</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Nombre:</label>
+                <input type="text" name="Nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Apellido:</label>
+                <input type="text" name="Apellido" required>
+            </div>
+            <div class="form-group">
+                <label>Numero:</label>
+                <input type="text" name="Numero" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarJovenes()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarJovenes()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaJovenes"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarJovenes" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalJovenes()">&times;</span>
+                <h2>Editar Jóvenes</h2>
+                <form id="formEditarJovenes" onsubmit="guardarEdicionJovenes(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" name="Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apellido:</label>
+                        <input type="text" name="Apellido" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Numero:</label>
+                        <input type="text" name="Numero" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalJovenes()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finanzas -->
+    <div id="formFinanzas" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarFinanzas(event, this)">
+            <h2>Gestión de Finanzas</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Concepto:</label>
+                <input type="text" name="Concepto" required>
+            </div>
+            <div class="form-group">
+                <label>Monto:</label>
+                <input type="text" name="Monto" required>
+            </div>
+            <div class="form-group">
+                <label>Fecha:</label>
+                <input type="text" name="Fecha" required>
+            </div>
+            <div class="form-group">
+                <label>Observaciones:</label>
+                <textarea name="Observaciones" required></textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarFinanzas()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarFinanzas()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaFinanzas"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarFinanzas" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalFinanzas()">&times;</span>
+                <h2>Editar Finanzas</h2>
+                <form id="formEditarFinanzas" onsubmit="guardarEdicionFinanzas(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Concepto:</label>
+                        <input type="text" name="Concepto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto:</label>
+                        <input type="text" name="Monto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha:</label>
+                        <input type="text" name="Fecha" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Observaciones:</label>
+                        <textarea name="Observaciones" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalFinanzas()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div id="formCalendario" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarCalendario(event, this)">
+            <h2>Gestión de Calendario</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Evento:</label>
+                <input type="text" name="Evento" required>
+            </div>
+            <div class="form-group">
+                <label>Fecha:</label>
+                <input type="text" name="Fecha" required>
+            </div>
+            <div class="form-group">
+                <label>Observaciones:</label>
+                <textarea name="Observaciones" required></textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarCalendario()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarCalendario()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaCalendario"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarCalendario" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalCalendario()">&times;</span>
+                <h2>Editar Calendario</h2>
+                <form id="formEditarCalendario" onsubmit="guardarEdicionCalendario(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Evento:</label>
+                        <input type="text" name="Evento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha:</label>
+                        <input type="text" name="Fecha" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Observaciones:</label>
+                        <textarea name="Observaciones" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalCalendario()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reuniones -->
+    <div id="formReuniones" class="seccion">
+        <button class="cerrar" onclick="volverAlMenu()">&times;</button>
+        <form onsubmit="registrarReuniones(event, this)">
+            <h2>Gestión de Reuniones</h2>
+            <div class="form-group">
+                <label>ID:</label>
+                <input type="text" name="id" readonly>
+            </div>
+            <div class="form-group">
+                <label>Dirige:</label>
+                <input type="text" name="Dirige" required>
+            </div>
+            <div class="form-group">
+                <label>Lectura:</label>
+                <input type="text" name="Lectura" required>
+            </div>
+            <div class="form-group">
+                <label>Cantos Alegre:</label>
+                <input type="text" name="Cantos_alegre" required>
+            </div>
+            <div class="form-group">
+                <label>Ofrenda:</label>
+                <input type="text" name="Ofrenda" required>
+            </div>
+            <div class="form-group">
+                <label>Predica:</label>
+                <input type="text" name="Predica" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Registrar</button>
+                <button type="button" class="btn btn-primary" onclick="buscarReuniones()">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarReuniones()">Limpiar</button>
+            </div>
+        </form>
+
+        <!-- Tabla de resultados -->
+        <div id="TablaReuniones"></div>
+
+        <!-- Modal para editar -->
+        <div id="modalEditarReuniones" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="cerrarModalReuniones()">&times;</span>
+                <h2>Editar Reuniones</h2>
+                <form id="formEditarReuniones" onsubmit="guardarEdicionReuniones(event)">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Dirige:</label>
+                        <input type="text" name="Dirige" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Lectura:</label>
+                        <input type="text" name="Lectura" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantos Alegre:</label>
+                        <input type="text" name="Cantos_alegre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ofrenda:</label>
+                        <input type="text" name="Ofrenda" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Predica:</label>
+                        <input type="text" name="Predica" required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalReuniones()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/tablas_formularios.js') }}"></script>
+{% endblock %}

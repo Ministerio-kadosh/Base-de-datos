@@ -1,0 +1,477 @@
+/* Estilos específicos para consultas personalizadas */
+
+.consultas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+/* Panel de consultas */
+.panel-consultas {
+  background: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1 / -1;
+}
+
+.panel-consultas h2 {
+  color: var(--primary-color);
+  margin-bottom: 25px;
+  font-size: 24px;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+/* Campos checkbox */
+.campos-checkbox {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.campo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.campo-checkbox:hover {
+  background: #f0f0f0;
+  border-color: var(--primary-color);
+}
+
+.campo-checkbox input[type="checkbox"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+}
+
+.campo-checkbox label {
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* Contenedor de condiciones */
+.condiciones-container {
+  margin-top: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.condicion-fila {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.condicion-fila select,
+.condicion-fila input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.condicion-fila select:focus,
+.condicion-fila input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+/* Contenedor de ordenamiento */
+.ordenamiento-container {
+  margin-top: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.orden-fila {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.orden-fila select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.orden-fila select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+/* Botones pequeños */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+/* Consultas guardadas */
+.consultas-guardadas {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1;
+}
+
+.consultas-guardadas h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.lista-consultas {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.consulta-guardada {
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.consulta-guardada:hover {
+  background: #e9ecef;
+  border-color: var(--primary-color);
+}
+
+.consulta-guardada .nombre {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 5px;
+}
+
+.consulta-guardada .descripcion {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.consulta-guardada .acciones {
+  display: flex;
+  gap: 5px;
+}
+
+.consulta-guardada .btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* Resultados de consulta */
+.resultados-consulta {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 2;
+}
+
+.resultados-consulta h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.tabla-resultados {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+
+.mensaje-inicial {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  font-style: italic;
+}
+
+/* Tabla de resultados */
+.tabla-consulta {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabla-consulta th {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-consulta td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e9ecef;
+  word-wrap: break-word;
+  max-width: 200px;
+}
+
+.tabla-consulta tr:hover {
+  background: #f8f9fa;
+}
+
+.tabla-consulta tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* SQL generado */
+.sql-generado {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  grid-column: 1 / -1;
+}
+
+.sql-generado h3 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.sql-container {
+  position: relative;
+  background: #2d3748;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+
+.sql-code {
+  color: #e2e8f0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+.sql-container .btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #4a5568;
+  color: var(--white);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.sql-container .btn:hover {
+  background: #2d3748;
+}
+
+/* Estadísticas de consulta */
+.estadisticas-consulta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.estadistica-item {
+  background: var(--white);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.estadistica-item .numero {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+}
+
+.estadistica-item .etiqueta {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+/* Responsive */
+@media screen and (max-width: 1200px) {
+  .consultas-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .consultas-guardadas,
+  .resultados-consulta {
+    grid-column: 1;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .consultas-container {
+    padding: 15px;
+  }
+  
+  .panel-consultas {
+    padding: 20px;
+  }
+  
+  .panel-consultas h2 {
+    font-size: 20px;
+  }
+  
+  .campos-checkbox {
+    grid-template-columns: 1fr;
+    max-height: 150px;
+  }
+  
+  .condicion-fila {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .orden-fila {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .tabla-consulta {
+    font-size: 12px;
+  }
+  
+  .tabla-consulta th,
+  .tabla-consulta td {
+    padding: 8px 6px;
+  }
+  
+  .sql-code {
+    font-size: 12px;
+  }
+  
+  .estadisticas-consulta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Animaciones */
+.consulta-guardada {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Estados de carga */
+.cargando-consulta {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-color);
+}
+
+.cargando-consulta .spinner {
+  margin: 0 auto 20px;
+}
+
+/* Mensajes de error */
+.error-consulta {
+  background: #fee;
+  color: var(--error-color);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--error-color);
+  margin-bottom: 15px;
+}
+
+/* Tooltips para campos */
+.campo-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.campo-tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: #333;
+  color: var(--white);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.campo-tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
