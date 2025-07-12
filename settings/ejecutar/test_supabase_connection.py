@@ -70,14 +70,14 @@ def test_admin_operations(supabase: Client):
     
     try:
         # Verificar si existe el admin inicial
-        response = supabase.table('administradores').select('*').eq('email', 'admin@sistema.com').execute()
+        response = supabase.table('administradores').select('*').eq('nombre', 'Administrador Principal').execute()
         
         if response.data:
             print("✅ Administrador inicial encontrado")
             admin = response.data[0]
-            print(f"   - Email: {admin['email']}")
             print(f"   - Nombre: {admin['nombre']}")
-            print(f"   - Rol: {admin['rol']}")
+            print(f"   - Código: {admin['codigo']}")
+            print(f"   - Estado: {admin['estado']}")
         else:
             print("⚠️  Administrador inicial no encontrado")
             print("   Ejecuta el script SQL para crear los datos iniciales")
@@ -96,7 +96,7 @@ def test_predicadores_operations(supabase: Client):
         
         if response.data:
             for predicador in response.data[:3]:  # Mostrar solo los primeros 3
-                print(f"   - {predicador['Nombre']} {predicador['Apellido']}")
+                print(f"   - {predicador['nombre']} {predicador['apellido']}")
                 
     except Exception as e:
         print(f"❌ Error al obtener predicadores: {str(e)}")
@@ -108,11 +108,10 @@ def test_insert_operation(supabase: Client):
     try:
         # Datos de prueba
         test_data = {
-            'Objetivo': 'Prueba de conexión',
-            'Descripcion': 'Esta es una tarea de prueba para verificar la conexión con Supabase',
-            'prioridad': 'baja',
-            'estado': 'creado',
-            'fecha': datetime.now().isoformat(),
+            'objetivo': 'Prueba de conexión',
+            'descripcion': 'Esta es una tarea de prueba para verificar la conexión con Supabase',
+            'estado': 'Pendiente',
+            'fecha': '2025-07-12T17:16:27.622756+00:00',
             'usuario': 'sistema'
         }
         

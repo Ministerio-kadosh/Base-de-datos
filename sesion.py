@@ -138,10 +138,8 @@ def verificar_permiso(user_email, permiso):
 def is_admin_by_name(nombre, codigo):
     """Verificar si es administrador por nombre y código"""
     try:
-        # Encriptar el código para comparar
-        codigo_encriptado = hashlib.sha256(codigo.encode()).hexdigest()
-        
-        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('codigo', codigo_encriptado).eq('estado', 'Activo').execute()
+        # Comparar directamente el código (sin encriptar)
+        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('codigo', codigo).eq('estado', 'Activo').execute()
         
         return len(response.data) > 0
     except Exception as e:
@@ -151,11 +149,14 @@ def is_admin_by_name(nombre, codigo):
 def get_admin_role(nombre):
     """Obtener el rol del administrador por nombre"""
     try:
-        response = supabase.table('administradores').select('rol').eq('nombre', nombre).eq('estado', 'Activo').execute()
-        
-        if response.data:
-            return response.data[0]['rol']
-        return 'Usuario'
+        # Como la tabla no tiene columna 'rol', asignamos un rol por defecto
+        # basado en el nombre del administrador
+        if 'Principal' in nombre or 'Super' in nombre:
+            return 'Super Admin'
+        elif 'Admin' in nombre:
+            return 'Admin'
+        else:
+            return 'Usuario'
     except Exception as e:
         print(f"Error en get_admin_role: {e}")
         return 'Usuario'
