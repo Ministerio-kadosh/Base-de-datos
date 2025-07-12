@@ -38,7 +38,7 @@ async function verificarAcceso(event) {
     const codigoEncriptado = await encriptarPassword(datos.codigo);
     
     // Llamar al backend para verificar
-    const response = await fetch('/api/sesion/verificar', {
+    const response = await fetch('/api/sesion/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ async function verificarAcceso(event) {
       body: JSON.stringify({
         email: datos.email,
         nombre: datos.nombre,
-        codigo: codigoEncriptado
+        codigo: datos.codigo  // Enviar código sin encriptar
       })
     });
 
@@ -196,6 +196,7 @@ function validarId(id) {
 document.addEventListener('DOMContentLoaded', function() {
   const verified = sessionStorage.getItem('userVerified') === 'true';
   if (verified) {
+    // userVerified ya está declarada arriba, solo asignamos
     userVerified = true;
     document.getElementById('verificationScreen').style.display = 'none';
     document.getElementById('menu').classList.add('visible');

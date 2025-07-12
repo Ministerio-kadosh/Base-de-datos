@@ -25,11 +25,24 @@ app.config['SUPABASE_KEY'] = os.environ.get('SUPABASE_KEY', '')
 # Verificar configuración de Supabase
 if not app.config['SUPABASE_URL'] or not app.config['SUPABASE_KEY']:
     print("⚠️  ADVERTENCIA: Variables de entorno de Supabase no configuradas")
+    print(f"SUPABASE_URL: {app.config['SUPABASE_URL']}")
+    print(f"SUPABASE_KEY: {'Configurada' if app.config['SUPABASE_KEY'] else 'No configurada'}")
+else:
+    print("✅ Variables de entorno de Supabase configuradas correctamente")
 
 @app.route('/')
 def index():
     """Página principal"""
     return render_template('index.html')
+
+@app.route('/health')
+def health():
+    """Endpoint de salud para verificar que el servidor esté funcionando"""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'supabase_configured': bool(app.config['SUPABASE_URL'] and app.config['SUPABASE_KEY'])
+    })
 
 @app.route('/tablas')
 def tablas():
