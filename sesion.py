@@ -3,6 +3,7 @@ from supabase import create_client, Client
 import os
 from datetime import datetime
 import logging
+import hashlib
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -91,6 +92,31 @@ def check_access():
     except Exception as e:
         logger.error(f'Error en check_access: {str(e)}')
         return False
+
+def is_admin_by_name(nombre, codigo):
+    """Verificar si es administrador por nombre y código"""
+    try:
+        # Encriptar el código para comparar
+        codigo_encriptado = hashlib.sha256(codigo.encode()).hexdigest()
+        
+        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('codigo', codigo_encriptado).eq('estado', 'Activo').execute()
+        
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error en is_admin_by_name: {e}")
+        return False
+
+def get_admin_role(nombre):
+    """Obtener el rol del administrador por nombre"""
+    try:
+        response = supabase.table('administradores').select('rol').eq('nombre', nombre).eq('estado', 'Activo').execute()
+        
+        if response.data:
+            return response.data[0]['rol']
+        return 'Usuario'
+    except Exception as e:
+        print(f"Error en get_admin_role: {e}")
+        return 'Usuario'
 
 def is_admin(email, codigo, nombre):
     """Verificar si un email está en la lista de administradores - convertido de isAdmin()"""
@@ -187,58 +213,57 @@ def obtener_admins():
         logger.error(f'Error al obtener admins: {str(e)}')
         raise e
 
-def agregar_admin(email, nombre, rol, codigo):
-    """Agregar administrador - convertido de agregarAdmin()"""
+def agregar_admin(nombre, rol, codigo):
+    """Agregar un nuevo administrador"""
     try:
-        user_email = session.get('user_email')
-        if not verificar_permiso(user_email, 'agregarAdmin'):
-            raise ValueError('No tienes permisos para agregar administradores')
+        # Encriptar el código
+        codigo_encriptado = hashlib.sha256(codigo.encode()).hexdigest()
         
-        # Verificar si ya existe
-        existing = supabase.table('Administradores').select('*').eq('email', email.lower()).execute()
-        if existing.data:
-            raise ValueError('Este email ya es administrador')
+        # Verificar si ya existe un administrador con ese nombre
+        response = supabase.table('administradores').select('*').eq('nombre', nombre).execute()
+        
+        if response.data:
+            raise ValueError('Ya existe un administrador con ese nombre')
         
         # Insertar nuevo administrador
-        data = {
-            'email': email.lower(),
+        datos_admin = {
             'nombre': nombre,
             'rol': rol,
-            'codigo': codigo,
-            'fecha_agregado': datetime.now().isoformat()
+            'codigo': codigo_encriptado,
+            'fecha_creacion': datetime.now().isoformat(),
+            'estado': 'Activo'
         }
         
-        response = supabase.table('Administradores').insert(data).execute()
-        return True
+        response = supabase.table('administradores').insert(datos_admin).execute()
+        
+        if response.data:
+            return True
+        else:
+            raise ValueError('Error al agregar administrador')
+            
     except Exception as e:
-        logger.error(f'Error al agregar admin: {str(e)}')
+        print(f"Error en agregar_admin: {e}")
         raise e
 
-def eliminar_admin(email):
-    """Eliminar administrador - convertido de eliminarAdmin()"""
+def eliminar_admin(nombre):
+    """Eliminar un administrador por nombre"""
     try:
-        user_email = session.get('user_email')
-        if not verificar_permiso(user_email, 'eliminarAdmin'):
-            raise ValueError('No tienes permisos para eliminar administradores')
-        
-        # Verificar que no se elimine a sí mismo
-        if email.lower() == user_email.lower():
-            raise ValueError('No puedes eliminarte a ti mismo como administrador')
-        
-        # Verificar que no sea el último administrador
-        total_admins = supabase.table('Administradores').select('*', count='exact').execute()
-        if total_admins.count <= 1:
-            raise ValueError('No se puede eliminar al último administrador')
-        
-        # Eliminar administrador
-        response = supabase.table('Administradores').delete().eq('email', email.lower()).execute()
+        # Verificar si existe el administrador
+        response = supabase.table('administradores').select('*').eq('nombre', nombre).execute()
         
         if not response.data:
             raise ValueError('Administrador no encontrado')
         
-        return True
+        # Soft delete - marcar como inactivo
+        response = supabase.table('administradores').update({'estado': 'Inactivo'}).eq('nombre', nombre).execute()
+        
+        if response.data:
+            return True
+        else:
+            raise ValueError('Error al eliminar administrador')
+            
     except Exception as e:
-        logger.error(f'Error al eliminar admin: {str(e)}')
+        print(f"Error en eliminar_admin: {e}")
         raise e
 
 def check_super_admin():

@@ -40,6 +40,19 @@ def crear_informe(titulo, descripcion, consultas, formato='json'):
         logger.error(f'Error en crear_informe: {str(error)}')
         raise error
 
+def obtener_informe_por_id(id_informe):
+    """Obtener un informe específico por ID"""
+    try:
+        response = supabase.table('Informes').select('*').eq('id', id_informe).eq('estado', 'activo').execute()
+        
+        if response.data:
+            return response.data[0]
+        
+        return None
+    except Exception as error:
+        logger.error(f'Error en obtener_informe_por_id: {str(error)}')
+        raise error
+
 def obtener_informes():
     """Obtener todos los informes - convertido de funciones de informes"""
     try:

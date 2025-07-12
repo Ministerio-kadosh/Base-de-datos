@@ -675,15 +675,34 @@ async function descargarInformeHistorial(id) {
     try {
         mostrarCargando();
         
-        const response = await fetch(`/api/informes/descargar/${id}?formato=${item.formato}`, {
+        // Verificar si el informe existe en la base de datos
+        const response = await fetch(`/api/informes/${id}`, {
             method: 'GET'
         });
 
         if (!response.ok) {
-            throw new Error('Error al descargar el informe');
+            if (response.status === 404) {
+                mostrarError('El informe ya no existe en la base de datos');
+                // Remover del historial local
+                historialInformes = historialInformes.filter(h => h.id !== id);
+                localStorage.setItem('historialInformes', JSON.stringify(historialInformes));
+                cargarHistorialInformes();
+                return;
+            }
+            throw new Error(`Error del servidor: ${response.status}`);
         }
 
-        const blob = await response.blob();
+        // Intentar descargar el informe
+        const downloadResponse = await fetch(`/api/informes/descargar/${id}?formato=${item.formato}`, {
+            method: 'GET'
+        });
+
+        if (!downloadResponse.ok) {
+            const errorData = await downloadResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || `Error al descargar el informe (${downloadResponse.status})`);
+        }
+
+        const blob = await downloadResponse.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

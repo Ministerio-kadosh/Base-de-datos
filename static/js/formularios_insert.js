@@ -189,7 +189,7 @@ async function registrarBandeja(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/bandeja/crear', {
+    const response = await fetch('/api/formularios/bandeja', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ async function registrarBandeja(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -231,7 +231,7 @@ async function registrarPredicadores(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/predicadores/crear', {
+    const response = await fetch('/api/tablas/predicadores', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ async function registrarPredicadores(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -273,7 +273,7 @@ async function registrarReuniones(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/reuniones/crear', {
+    const response = await fetch('/api/tablas/reuniones', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -289,7 +289,7 @@ async function registrarReuniones(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -315,7 +315,7 @@ async function registrarFinanzas(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/finanzas/crear', {
+    const response = await fetch('/api/formularios/finanzas', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -331,7 +331,7 @@ async function registrarFinanzas(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -357,7 +357,7 @@ async function registrarAsistencias(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/asistencias/crear', {
+    const response = await fetch('/api/formularios/asistencias', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -373,7 +373,7 @@ async function registrarAsistencias(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -399,7 +399,7 @@ async function registrarJovenes(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/jovenes/crear', {
+    const response = await fetch('/api/formularios/jovenes', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -415,7 +415,7 @@ async function registrarJovenes(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -441,7 +441,7 @@ async function registrarCalendario(event, form) {
   document.getElementById('loadingOverlay').style.display = 'flex';
   
   try {
-    const response = await fetch('/api/tablas/calendario/crear', {
+    const response = await fetch('/api/tablas/calendario', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ async function registrarCalendario(event, form) {
       mostrarMensajeConfirmacion();
       limpiarFormulario(form.querySelector('.btn-secondary'));
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error al registrar: " + resultado.error);
     }
   } catch (error) {
     document.getElementById('loadingOverlay').style.display = 'none';

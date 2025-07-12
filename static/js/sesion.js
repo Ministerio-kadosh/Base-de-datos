@@ -18,7 +18,7 @@ async function verificarAcceso(event) {
   const datos = Object.fromEntries(new FormData(form));
   
   // Validar que todos los campos estén completos
-  if (!datos.email || !datos.nombre || !datos.codigo) {
+  if (!datos.nombre || !datos.codigo) {
     const errorDiv = document.getElementById('verificationError');
     errorDiv.textContent = 'Por favor complete todos los campos';
     errorDiv.style.display = 'block';
@@ -26,7 +26,6 @@ async function verificarAcceso(event) {
   }
 
   // Limpiar espacios en blanco
-  datos.email = datos.email.trim();
   datos.nombre = datos.nombre.trim();
   datos.codigo = datos.codigo.trim();
 
@@ -44,7 +43,6 @@ async function verificarAcceso(event) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: datos.email,
         nombre: datos.nombre,
         codigo: datos.codigo  // Enviar código sin encriptar
       })
@@ -54,7 +52,6 @@ async function verificarAcceso(event) {
     
     if (resultado.success) {
       // Guardar datos de sesión
-      sessionStorage.setItem('userEmail', datos.email);
       sessionStorage.setItem('userNombre', datos.nombre);
       sessionStorage.setItem('userRol', resultado.rol || 'Usuario');
       sessionStorage.setItem('userVerified', 'true');

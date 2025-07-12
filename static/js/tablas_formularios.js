@@ -6,7 +6,7 @@ async function registrarAdmin(event, form) {
   const datos = Object.fromEntries(new FormData(form));
   
   try {
-    const response = await fetch('/api/admin/crear', {
+    const response = await fetch('/api/admin/admins', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ async function registrarAdmin(event, form) {
       limpiarAdmin();
       buscarAdmins();
     } else {
-      alert("Error: " + resultado.mensaje);
+      alert("Error: " + resultado.error);
     }
   } catch (error) {
     console.error('Error al registrar admin:', error);
@@ -33,7 +33,7 @@ async function buscarAdmins() {
   if (!checkAuthentication()) return;
   
   try {
-    const response = await fetch('/api/admin/buscar');
+    const response = await fetch('/api/admin/admins');
     const resultados = await response.json();
     
     const tabla = document.getElementById("TablaAdmins");
@@ -45,12 +45,12 @@ async function buscarAdmins() {
     }
 
     resultados.data.forEach((admin) => {
-      const fecha = admin.fecha ? new Date(admin.fecha).toLocaleString() : 'N/A';
+      const fecha = admin.fecha_creacion ? new Date(admin.fecha_creacion).toLocaleString() : 'N/A';
       const filaHtml = `
         <div>
-          ${admin.email} | ${admin.nombre} | ${admin.rol} | ${fecha}
+          ${admin.nombre} | ${admin.rol} | ${fecha}
           <div class="button-group">
-            <button class="btn btn-secondary" onclick="eliminarAdmin('${admin.email}')">Eliminar</button>
+            <button class="btn btn-secondary" onclick="eliminarAdmin('${admin.nombre}')">Eliminar</button>
           </div>
         </div>`;
       tabla.innerHTML += filaHtml;
@@ -61,12 +61,12 @@ async function buscarAdmins() {
   }
 }
 
-async function eliminarAdmin(email) {
+async function eliminarAdmin(nombre) {
   if (!checkAuthentication()) return;
   
   if (confirm("¿Está seguro que desea eliminar este administrador?")) {
     try {
-      const response = await fetch(`/api/admin/eliminar/${email}`, {
+      const response = await fetch(`/api/admin/admins/${encodeURIComponent(nombre)}`, {
         method: 'DELETE'
       });
       
@@ -76,7 +76,7 @@ async function eliminarAdmin(email) {
         alert("Administrador eliminado correctamente");
         buscarAdmins();
       } else {
-        alert("Error: " + resultado.mensaje);
+        alert("Error: " + resultado.error);
       }
     } catch (error) {
       console.error('Error al eliminar admin:', error);
@@ -867,7 +867,32 @@ async function buscarReuniones() {
 function limpiarReuniones() {
   const form = document.querySelector("#formReuniones form");
   form.reset();
-  form.querySelector("[name='id']").value = '';
+}
+
+// Función para mostrar secciones
+function mostrarSeccion(seccionId) {
+  if (!checkAuthentication()) return;
+  
+  // Ocultar todas las secciones
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('visible'));
+  
+  // Ocultar menú de tablas
+  document.getElementById('menuTablas').classList.remove('visible');
+  
+  // Mostrar la sección seleccionada
+  const seccion = document.getElementById(seccionId);
+  if (seccion) {
+    seccion.classList.add('visible');
+  }
+}
+
+// Función para volver al menú
+function volverAlMenu() {
+  // Ocultar todas las secciones
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('visible'));
+  
+  // Mostrar menú de tablas
+  document.getElementById('menuTablas').classList.add('visible');
 }
 
 // Verificar autenticación al cargar la página

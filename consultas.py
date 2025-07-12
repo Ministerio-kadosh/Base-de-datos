@@ -396,3 +396,220 @@ def exportar_consulta(tabla, filtros=None, formato='json'):
     except Exception as error:
         logger.error(f'Error en exportar_consulta: {str(error)}')
         raise error
+
+def consulta_con_relaciones(tabla_principal, relaciones=None, filtros=None, ordenamiento=None, limite=None):
+    """Realizar consulta con relaciones entre tablas"""
+    try:
+        query = supabase.table(tabla_principal).select('*')
+        
+        # Agregar relaciones si se especifican
+        if relaciones:
+            for relacion in relaciones:
+                query = query.select(f'{relacion}.*')
+        
+        # Aplicar filtros
+        if filtros:
+            for campo, valor in filtros.items():
+                if isinstance(valor, dict):
+                    # Filtros complejos (rango, like, etc.)
+                    for operador, valor_filtro in valor.items():
+                        if operador == 'gte':
+                            query = query.gte(campo, valor_filtro)
+                        elif operador == 'lte':
+                            query = query.lte(campo, valor_filtro)
+                        elif operador == 'like':
+                            query = query.like(campo, f'%{valor_filtro}%')
+                        elif operador == 'in':
+                            query = query.in_(campo, valor_filtro)
+                else:
+                    # Filtro simple
+                    query = query.eq(campo, valor)
+        
+        # Aplicar ordenamiento
+        if ordenamiento:
+            for campo, direccion in ordenamiento.items():
+                if direccion.lower() == 'desc':
+                    query = query.order(campo, desc=True)
+                else:
+                    query = query.order(campo)
+        
+        # Aplicar límite
+        if limite:
+            query = query.limit(limite)
+        
+        response = query.execute()
+        return response.data
+        
+    except Exception as e:
+        print(f"Error en consulta_con_relaciones: {e}")
+        raise e
+
+def consulta_reuniones_con_predicador(filtros=None):
+    """Consultar reuniones con información del predicador"""
+    try:
+        query = supabase.table('reuniones').select('*, predicadores(Nombre, Apellido, Numero)')
+        
+        if filtros:
+            for campo, valor in filtros.items():
+                query = query.eq(campo, valor)
+        
+        response = query.execute()
+        return response.data
+        
+    except Exception as e:
+        print(f"Error en consulta_reuniones_con_predicador: {e}")
+        raise e
+
+def consulta_asistencias_con_joven(filtros=None):
+    """Consultar asistencias con información del joven"""
+    try:
+        query = supabase.table('asistencias').select('*, jovenes(Nombre, Edad, Telefono)')
+        
+        if filtros:
+            for campo, valor in filtros.items():
+                query = query.eq(campo, valor)
+        
+        response = query.execute()
+        return response.data
+        
+    except Exception as e:
+        print(f"Error en consulta_asistencias_con_joven: {e}")
+        raise e
+
+def consulta_finanzas_con_reunion(filtros=None):
+    """Consultar finanzas con información de la reunión"""
+    try:
+        query = supabase.table('finanzas').select('*, reuniones(Dirige, fecha_reunion)')
+        
+        if filtros:
+            for campo, valor in filtros.items():
+                query = query.eq(campo, valor)
+        
+        response = query.execute()
+        return response.data
+        
+    except Exception as e:
+        print(f"Error en consulta_finanzas_con_reunion: {e}")
+        raise e
+
+def consulta_calendario_con_reunion(filtros=None):
+    """Consultar calendario con información de la reunión"""
+    try:
+        query = supabase.table('calendario').select('*, reuniones(Dirige, fecha_reunion)')
+        
+        if filtros:
+            for campo, valor in filtros.items():
+                query = query.eq(campo, valor)
+        
+        response = query.execute()
+        return response.data
+        
+    except Exception as e:
+        print(f"Error en consulta_calendario_con_reunion: {e}")
+        raise e
+
+def consulta_completa_reunion(fecha_inicio=None, fecha_fin=None):
+    """Consulta completa de una reunión con todos sus datos relacionados"""
+    try:
+        # Obtener reuniones en el rango de fechas
+        query = supabase.table('reuniones').select('*')
+        
+        if fecha_inicio:
+            query = query.gte('fecha_reunion', fecha_inicio)
+        if fecha_fin:
+            query = query.lte('fecha_reunion', fecha_fin)
+        
+        reuniones = query.execute().data
+        
+        resultado_completo = []
+        
+        for reunion in reuniones:
+            reunion_id = reunion['id']
+            
+            # Obtener predicador
+            predicador = None
+            if reunion.get('predicador_id'):
+                predicador_response = supabase.table('predicadores').select('*').eq('id', reunion['predicador_id']).execute()
+                predicador = predicador_response.data[0] if predicador_response.data else None
+            
+            # Obtener asistencias
+            asistencias_response = supabase.table('asistencias').select('*, jovenes(Nombre, Edad)').eq('reunion_id', reunion_id).execute()
+            asistencias = asistencias_response.data
+            
+            # Obtener finanzas relacionadas
+            finanzas_response = supabase.table('finanzas').select('*').eq('reunion_id', reunion_id).execute()
+            finanzas = finanzas_response.data
+            
+            # Obtener eventos de calendario relacionados
+            calendario_response = supabase.table('calendario').select('*').eq('reunion_id', reunion_id).execute()
+            calendario = calendario_response.data
+            
+            reunion_completa = {
+                'reunion': reunion,
+                'predicador': predicador,
+                'asistencias': asistencias,
+                'finanzas': finanzas,
+                'calendario': calendario,
+                'total_asistencias': len(asistencias),
+                'total_finanzas': len(finanzas),
+                'monto_total': sum(float(f['Monto']) for f in finanzas if f.get('Monto'))
+            }
+            
+            resultado_completo.append(reunion_completa)
+        
+        return resultado_completo
+        
+    except Exception as e:
+        print(f"Error en consulta_completa_reunion: {e}")
+        raise e
+
+def consulta_estadisticas_relacionadas():
+    """Obtener estadísticas con relaciones"""
+    try:
+        estadisticas = {}
+        
+        # Estadísticas de predicadores con reuniones
+        predicadores_response = supabase.table('predicadores').select('id, Nombre, Apellido').execute()
+        predicadores = predicadores_response.data
+        
+        for predicador in predicadores:
+            reuniones_response = supabase.table('reuniones').select('id').eq('predicador_id', predicador['id']).execute()
+            predicador['total_reuniones'] = len(reuniones_response.data)
+        
+        estadisticas['predicadores'] = predicadores
+        
+        # Estadísticas de jóvenes con asistencias
+        jovenes_response = supabase.table('jovenes').select('id, Nombre, Edad').execute()
+        jovenes = jovenes_response.data
+        
+        for joven in jovenes:
+            asistencias_response = supabase.table('asistencias').select('*').eq('joven_id', joven['id']).execute()
+            asistencias = asistencias_response.data
+            
+            joven['total_asistencias'] = len(asistencias)
+            joven['asistencias_presente'] = sum(1 for a in asistencias if any(
+                a.get('unoviernes') == 'Presente' or 
+                a.get('dosviernes') == 'Presente' or 
+                a.get('tresViernes') == 'Presente' or 
+                a.get('cuatroviernes') == 'Presente'
+            ))
+        
+        estadisticas['jovenes'] = jovenes
+        
+        # Estadísticas de finanzas por reunión
+        finanzas_response = supabase.table('finanzas').select('*, reuniones(fecha_reunion)').execute()
+        finanzas = finanzas_response.data
+        
+        estadisticas['finanzas_por_reunion'] = {}
+        for finanza in finanzas:
+            reunion_fecha = finanza.get('reuniones', {}).get('fecha_reunion')
+            if reunion_fecha:
+                if reunion_fecha not in estadisticas['finanzas_por_reunion']:
+                    estadisticas['finanzas_por_reunion'][reunion_fecha] = 0
+                estadisticas['finanzas_por_reunion'][reunion_fecha] += float(finanza.get('Monto', 0))
+        
+        return estadisticas
+        
+    except Exception as e:
+        print(f"Error en consulta_estadisticas_relacionadas: {e}")
+        raise e

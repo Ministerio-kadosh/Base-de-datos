@@ -76,17 +76,16 @@ def api_login():
     """Login de usuario"""
     try:
         data = request.get_json()
-        email = data.get('email')
         codigo = data.get('codigo')
         nombre = data.get('nombre')
         
-        if is_admin(email, codigo, nombre):
-            session['user_email'] = email
+        if is_admin_by_name(nombre, codigo):
             session['user_nombre'] = nombre
             return jsonify({
                 'success': True,
                 'message': 'Login exitoso',
-                'user': {'email': email, 'nombre': nombre}
+                'user': {'nombre': nombre},
+                'rol': get_admin_role(nombre)
             })
         else:
             return jsonify({
@@ -512,6 +511,106 @@ def api_buscar_por_fecha():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/consultas/relaciones', methods=['POST'])
+def api_consulta_con_relaciones():
+    """Realizar consulta con relaciones entre tablas"""
+    try:
+        data = request.get_json()
+        tabla_principal = data.get('tabla')
+        relaciones = data.get('relaciones', [])
+        filtros = data.get('filtros', {})
+        ordenamiento = data.get('ordenamiento', {})
+        limite = data.get('limite')
+        
+        from consultas import consulta_con_relaciones
+        resultado = consulta_con_relaciones(tabla_principal, relaciones, filtros, ordenamiento, limite)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/reuniones-predicador', methods=['POST'])
+def api_consulta_reuniones_predicador():
+    """Consultar reuniones con información del predicador"""
+    try:
+        data = request.get_json()
+        filtros = data.get('filtros', {})
+        
+        from consultas import consulta_reuniones_con_predicador
+        resultado = consulta_reuniones_con_predicador(filtros)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/asistencias-joven', methods=['POST'])
+def api_consulta_asistencias_joven():
+    """Consultar asistencias con información del joven"""
+    try:
+        data = request.get_json()
+        filtros = data.get('filtros', {})
+        
+        from consultas import consulta_asistencias_con_joven
+        resultado = consulta_asistencias_con_joven(filtros)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/finanzas-reunion', methods=['POST'])
+def api_consulta_finanzas_reunion():
+    """Consultar finanzas con información de la reunión"""
+    try:
+        data = request.get_json()
+        filtros = data.get('filtros', {})
+        
+        from consultas import consulta_finanzas_con_reunion
+        resultado = consulta_finanzas_con_reunion(filtros)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/calendario-reunion', methods=['POST'])
+def api_consulta_calendario_reunion():
+    """Consultar calendario con información de la reunión"""
+    try:
+        data = request.get_json()
+        filtros = data.get('filtros', {})
+        
+        from consultas import consulta_calendario_con_reunion
+        resultado = consulta_calendario_con_reunion(filtros)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/reunion-completa', methods=['POST'])
+def api_consulta_reunion_completa():
+    """Consulta completa de una reunión con todos sus datos relacionados"""
+    try:
+        data = request.get_json()
+        fecha_inicio = data.get('fecha_inicio')
+        fecha_fin = data.get('fecha_fin')
+        
+        from consultas import consulta_completa_reunion
+        resultado = consulta_completa_reunion(fecha_inicio, fecha_fin)
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/consultas/estadisticas-relacionadas', methods=['GET'])
+def api_estadisticas_relacionadas():
+    """Obtener estadísticas con relaciones"""
+    try:
+        from consultas import consulta_estadisticas_relacionadas
+        resultado = consulta_estadisticas_relacionadas()
+        
+        return jsonify({'success': True, 'data': resultado})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/consultas/estadisticas/<tabla>', methods=['GET'])
 def api_obtener_estadisticas(tabla):
     """Obtener estadísticas de una tabla"""
@@ -552,6 +651,19 @@ def api_exportar_consulta():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ===== RUTAS API DE INFORMES =====
+
+@app.route('/api/informes/<int:id>', methods=['GET'])
+def api_obtener_informe_por_id(id):
+    """Obtener un informe específico por ID"""
+    try:
+        from informes import obtener_informe_por_id
+        informe = obtener_informe_por_id(id)
+        if informe:
+            return jsonify({'success': True, 'data': informe})
+        else:
+            return jsonify({'success': False, 'error': 'Informe no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/informes', methods=['GET'])
 def api_obtener_informes():
@@ -819,24 +931,23 @@ def api_agregar_admin():
     """Agregar administrador"""
     try:
         data = request.get_json()
-        email = data.get('email')
         nombre = data.get('nombre')
         rol = data.get('rol')
         codigo = data.get('codigo')
         
-        if not all([email, nombre, rol, codigo]):
+        if not all([nombre, rol, codigo]):
             return jsonify({'success': False, 'error': 'Todos los campos son requeridos'}), 400
         
-        resultado = agregar_admin(email, nombre, rol, codigo)
+        resultado = agregar_admin(nombre, rol, codigo)
         return jsonify({'success': True, 'message': 'Administrador agregado'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/admin/admins/<email>', methods=['DELETE'])
-def api_eliminar_admin(email):
+@app.route('/api/admin/admins/<nombre>', methods=['DELETE'])
+def api_eliminar_admin(nombre):
     """Eliminar administrador"""
     try:
-        resultado = eliminar_admin(email)
+        resultado = eliminar_admin(nombre)
         return jsonify({'success': True, 'message': 'Administrador eliminado'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
