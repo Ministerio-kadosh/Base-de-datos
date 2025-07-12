@@ -28,7 +28,7 @@ def test_supabase_connection():
         print("✅ Cliente Supabase creado exitosamente")
         
         # Probar conexión básica
-        response = supabase.table('Administradores').select('count').execute()
+        response = supabase.table('administradores').select('count').execute()
         print("✅ Conexión con Supabase establecida correctamente")
         
         return True, supabase
@@ -43,16 +43,16 @@ def test_table_operations(supabase: Client):
     
     # Lista de tablas a probar
     tables = [
-        'Administradores',
-        'Predicadores', 
-        'Reuniones',
-        'Calendario',
-        'Bandeja',
-        'Asistencias',
-        'Jovenes',
-        'Finanzas',
-        'Historial_Cambios',
-        'Informes'
+        'administradores',
+        'predicadores', 
+        'reuniones',
+        'calendario',
+        'bandeja',
+        'asistencias',
+        'jovenes',
+        'finanzas',
+        'historial_cambios',
+        'informes'
     ]
     
     for table in tables:
@@ -70,7 +70,7 @@ def test_admin_operations(supabase: Client):
     
     try:
         # Verificar si existe el admin inicial
-        response = supabase.table('Administradores').select('*').eq('email', 'admin@sistema.com').execute()
+        response = supabase.table('administradores').select('*').eq('email', 'admin@sistema.com').execute()
         
         if response.data:
             print("✅ Administrador inicial encontrado")
@@ -91,7 +91,7 @@ def test_predicadores_operations(supabase: Client):
     
     try:
         # Obtener predicadores
-        response = supabase.table('Predicadores').select('*').execute()
+        response = supabase.table('predicadores').select('*').execute()
         print(f"✅ Predicadores encontrados: {len(response.data)}")
         
         if response.data:
@@ -117,14 +117,14 @@ def test_insert_operation(supabase: Client):
         }
         
         # Insertar en Bandeja
-        response = supabase.table('Bandeja').insert(test_data).execute()
+        response = supabase.table('bandeja').insert(test_data).execute()
         
         if response.data:
             print("✅ Inserción exitosa")
             print(f"   - ID creado: {response.data[0]['id']}")
             
             # Limpiar - eliminar el registro de prueba
-            supabase.table('Bandeja').delete().eq('id', response.data[0]['id']).execute()
+            supabase.table('bandeja').delete().eq('id', response.data[0]['id']).execute()
             print("✅ Registro de prueba eliminado")
         else:
             print("❌ Error en la inserción")
@@ -138,16 +138,16 @@ def test_views(supabase: Client):
     
     try:
         # Probar vista de estadísticas generales
-        response = supabase.table('Estadisticas_Generales').select('*').execute()
+        response = supabase.table('estadisticas_generales').select('*').execute()
         if response.data:
             stats = response.data[0]
-            print("✅ Vista Estadisticas_Generales:")
+            print("✅ Vista estadisticas_generales:")
             print(f"   - Total predicadores: {stats.get('total_predicadores', 0)}")
             print(f"   - Total reuniones: {stats.get('total_reuniones', 0)}")
             print(f"   - Total jóvenes: {stats.get('total_jovenes', 0)}")
             print(f"   - Tareas pendientes: {stats.get('tareas_pendientes', 0)}")
         else:
-            print("⚠️  Vista Estadisticas_Generales no disponible")
+            print("⚠️  Vista estadisticas_generales no disponible")
             
     except Exception as e:
         print(f"❌ Error al probar vistas: {str(e)}")

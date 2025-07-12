@@ -8,8 +8,8 @@ import sys
 from supabase import create_client, Client
 
 # Configuración Supabase
-supabase_url = os.environ.get('SUPABASE_URL')
-supabase_key = os.environ.get('SUPABASE_KEY')
+supabase_url = 'https://vztpbpontffuawntmixp.supabase.co'
+supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6dHBicG9udGZmdWF3bnRtaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MTMwOTQsImV4cCI6MjA2NzA4OTA5NH0.6CbDGLtfr493dJFXRNPczMW2oGms9JOO7QLAsgakdvs'
 
 if not supabase_url or not supabase_key:
     print("❌ Error: Variables de entorno SUPABASE_URL y SUPABASE_KEY no configuradas")
@@ -81,11 +81,11 @@ def test_relaciones():
     
     try:
         # Probar relación reuniones -> predicadores
-        response = supabase.table('reuniones').select('*, predicadores(Nombre, Apellido)').limit(3).execute()
+        response = supabase.table('reuniones').select('*, predicadores(nombre, apellido)').limit(3).execute()
         print(f"✅ Relación reuniones->predicadores: {len(response.data)} registros")
         
         # Probar relación asistencias -> jóvenes
-        response = supabase.table('asistencias').select('*, jovenes(Nombre, Edad)').limit(3).execute()
+        response = supabase.table('asistencias').select('*, jovenes(nombre, edad)').limit(3).execute()
         print(f"✅ Relación asistencias->jóvenes: {len(response.data)} registros")
         
         # Probar relación finanzas -> reuniones

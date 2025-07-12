@@ -467,7 +467,7 @@ def consulta_con_relaciones(tabla_principal, relaciones=None, filtros=None, orde
 def consulta_reuniones_con_predicador(filtros=None):
     """Consultar reuniones con información del predicador"""
     try:
-        query = supabase.table('reuniones').select('*, predicadores(Nombre, Apellido, Numero)')
+        query = supabase.table('reuniones').select('*, predicadores(nombre, apellido, numero)')
         
         if filtros:
             for campo, valor in filtros.items():
@@ -483,7 +483,7 @@ def consulta_reuniones_con_predicador(filtros=None):
 def consulta_asistencias_con_joven(filtros=None):
     """Consultar asistencias con información del joven"""
     try:
-        query = supabase.table('asistencias').select('*, jovenes(Nombre, Edad, Telefono)')
+        query = supabase.table('asistencias').select('*, jovenes(nombre, edad, telefono)')
         
         if filtros:
             for campo, valor in filtros.items():
@@ -553,7 +553,7 @@ def consulta_completa_reunion(fecha_inicio=None, fecha_fin=None):
                 predicador = predicador_response.data[0] if predicador_response.data else None
             
             # Obtener asistencias
-            asistencias_response = supabase.table('asistencias').select('*, jovenes(Nombre, Edad)').eq('reunion_id', reunion_id).execute()
+            asistencias_response = supabase.table('asistencias').select('*, jovenes(nombre, edad)').eq('reunion_id', reunion_id).execute()
             asistencias = asistencias_response.data
             
             # Obtener finanzas relacionadas
@@ -589,7 +589,7 @@ def consulta_estadisticas_relacionadas():
         estadisticas = {}
         
         # Estadísticas de predicadores con reuniones
-        predicadores_response = supabase.table('predicadores').select('id, Nombre, Apellido').execute()
+        predicadores_response = supabase.table('predicadores').select('id, nombre, apellido').execute()
         predicadores = predicadores_response.data
         
         for predicador in predicadores:
@@ -599,7 +599,7 @@ def consulta_estadisticas_relacionadas():
         estadisticas['predicadores'] = predicadores
         
         # Estadísticas de jóvenes con asistencias
-        jovenes_response = supabase.table('jovenes').select('id, Nombre, Edad').execute()
+        jovenes_response = supabase.table('jovenes').select('id, nombre, edad').execute()
         jovenes = jovenes_response.data
         
         for joven in jovenes:
