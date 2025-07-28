@@ -66,5 +66,11 @@ logs/
 # Settings folder (opcional - si quieres mantenerlo privado)
 # settings/
 
+# Test files (prevent accidental execution)
+test_*.py
+diagnostico_*.py
+verificar_*.py
+probar_*.py
+
 # Render
 .render-buildlogs/ 

@@ -51,14 +51,14 @@ def buscar_predicadores_por_id(id=None):
     """Buscar predicadores por ID o todos - convertido de buscarPredicadoresPorId()"""
     try:
         if id:
-            response = supabase.table('predicadores').select('*').eq('id', id).neq('estado', 'eliminado').execute()
+            response = supabase.table('predicadores').select('*').eq('id', id).execute()
         else:
-            response = supabase.table('predicadores').select('*').neq('estado', 'eliminado').execute()
+            response = supabase.table('predicadores').select('*').execute()
         
         return response.data
     except Exception as e:
         print(f"Error en buscar_predicadores_por_id: {e}")
-        raise e
+        return []
 
 def obtener_ultima_id_y_registrar_predicadores(datos):
     """Obtener última ID y registrar predicador - convertido de obtenerUltimaIdYRegistrarPredicadores()"""
@@ -169,7 +169,7 @@ def buscar_reuniones_por_id(id=None):
         return response.data
     except Exception as e:
         print(f"Error en buscar_reuniones_por_id: {e}")
-        raise e
+        return []
 
 def obtener_ultima_id_y_registrar_reuniones(datos):
     """Obtener última ID y registrar reunión - convertido de obtenerUltimaIdYRegistrarReuniones()"""

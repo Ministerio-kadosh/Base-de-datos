@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, jsonify, session, send_file
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from io import BytesIO
 from dotenv import load_dotenv
@@ -22,9 +25,21 @@ CORS(app)
 
 # Configuración
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-change-in-production')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 app.config['GMAIL_PASS'] = os.environ.get('GMAIL_PASS', '')
 app.config['SUPABASE_URL'] = os.environ.get('SUPABASE_URL', '')
 app.config['SUPABASE_KEY'] = os.environ.get('SUPABASE_KEY', '')
+
+# Inicializar JWT
+jwt = JWTManager(app)
+
+# Inicializar Rate Limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 # Verificar configuración de Supabase
 if not app.config['SUPABASE_URL'] or not app.config['SUPABASE_KEY']:
@@ -76,20 +91,27 @@ def admin():
 # ===== RUTAS API DE SESIÓN =====
 
 @app.route('/api/sesion/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_login():
-    """Login de usuario"""
+    """Login de usuario con JWT"""
     try:
         data = request.get_json()
         codigo = data.get('codigo')
         nombre = data.get('nombre')
         
         if is_admin_by_name(nombre, codigo):
+            # Crear token JWT
+            access_token = create_access_token(identity=nombre)
+            
+            # También mantener sesión para compatibilidad
             session['user_nombre'] = nombre
+            
             return jsonify({
                 'success': True,
                 'message': 'Login exitoso',
                 'user': {'nombre': nombre},
-                'rol': get_admin_role(nombre)
+                'rol': get_admin_role(nombre),
+                'access_token': access_token
             })
         else:
             return jsonify({
@@ -138,9 +160,12 @@ def api_obtener_predicadores():
     """Obtener predicadores"""
     try:
         id = request.args.get('id')
+        print(f"🔍 Buscando predicadores - ID: {id}")
         predicadores = buscar_predicadores_por_id(id)
+        print(f"✅ Predicadores encontrados: {len(predicadores)}")
         return jsonify({'success': True, 'data': predicadores})
     except Exception as e:
+        print(f"❌ Error en api_obtener_predicadores: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/tablas/predicadores', methods=['POST'])
@@ -262,9 +287,12 @@ def api_obtener_bandeja():
     """Obtener bandeja"""
     try:
         id = request.args.get('id')
+        print(f"🔍 Buscando bandeja - ID: {id}")
         tareas = buscar_bandeja_por_id(id)
+        print(f"✅ Tareas en bandeja encontradas: {len(tareas)}")
         return jsonify({'success': True, 'data': tareas})
     except Exception as e:
+        print(f"❌ Error en api_obtener_bandeja: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/formularios/bandeja', methods=['POST'])

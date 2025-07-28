@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import logging
 import hashlib
+import bcrypt
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env
@@ -17,6 +18,14 @@ logger = logging.getLogger(__name__)
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 supabase: Client = create_client(supabase_url, supabase_key)
+
+def hash_password(password):
+    """Generar hash seguro de contraseña usando bcrypt"""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password, hashed):
+    """Verificar contraseña contra hash bcrypt"""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 def registrar_cambio_historial(tabla, id_registro, accion, datos_anteriores=None, datos_nuevos=None):
     """Registrar cambio en el historial"""
@@ -142,10 +151,24 @@ def verificar_permiso(user_email, permiso):
 def is_admin_by_name(nombre, codigo):
     """Verificar si es administrador por nombre y código"""
     try:
-        # Comparar directamente el código (sin encriptar)
-        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('codigo', codigo).eq('estado', 'Activo').execute()
+        # Buscar administrador por nombre
+        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('estado', 'Activo').execute()
         
-        return len(response.data) > 0
+        if not response.data:
+            return False
+        
+        admin = response.data[0]
+        stored_hash = admin.get('codigo', '')
+        
+        # Verificar si el código almacenado es un hash bcrypt
+        if stored_hash.startswith('$2b$'):
+            # Es un hash bcrypt, verificar con bcrypt
+            return bcrypt.checkpw(codigo.encode('utf-8'), stored_hash.encode('utf-8'))
+        else:
+            # Es un hash SHA256, verificar con hashlib (compatibilidad)
+            codigo_hash = hashlib.sha256(codigo.encode()).hexdigest()
+            return stored_hash == codigo_hash
+            
     except Exception as e:
         print(f"Error en is_admin_by_name: {e}")
         return False

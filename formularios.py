@@ -49,7 +49,7 @@ def buscar_bandeja_por_id(id=None):
         return response.data
     except Exception as e:
         print(f"Error en buscar_bandeja_por_id: {e}")
-        raise e
+        return []
 
 def obtener_ultima_id_y_registrar_bandeja(datos):
     """Obtener última ID y registrar tarea en bandeja - convertido de obtenerUltimaIdYRegistrarBandeja()"""
