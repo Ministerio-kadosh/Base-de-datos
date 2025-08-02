@@ -160,12 +160,12 @@ def api_obtener_predicadores():
     """Obtener predicadores"""
     try:
         id = request.args.get('id')
-        print(f"🔍 Buscando predicadores - ID: {id}")
+        logger.info(f"🔍 Buscando predicadores - ID: {id}")
         predicadores = buscar_predicadores_por_id(id)
-        print(f"✅ Predicadores encontrados: {len(predicadores)}")
+        logger.info(f"✅ Predicadores encontrados: {len(predicadores)}")
         return jsonify({'success': True, 'data': predicadores})
     except Exception as e:
-        print(f"❌ Error en api_obtener_predicadores: {e}")
+        logger.error(f"❌ Error en api_obtener_predicadores: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/tablas/predicadores', methods=['POST'])
@@ -173,7 +173,6 @@ def api_crear_predicador():
     """Crear predicador"""
     try:
         data = request.get_json()
-        data['usuario'] = session.get('user_email', 'sistema')
         predicador = obtener_ultima_id_y_registrar_predicadores(data)
         return jsonify({'success': True, 'data': predicador})
     except Exception as e:
@@ -184,8 +183,7 @@ def api_actualizar_predicador(id):
     """Actualizar predicador"""
     try:
         data = request.get_json()
-        data['id'] = id
-        data['usuario'] = session.get('user_email', 'sistema')
+        data['id_predicador'] = id
         predicador = editar_predicadores(data)
         return jsonify({'success': True, 'data': predicador})
     except Exception as e:
@@ -225,7 +223,7 @@ def api_actualizar_reunion(id):
     """Actualizar reunión"""
     try:
         data = request.get_json()
-        data['id'] = id
+        data['id_reunion'] = id
         reunion = editar_reuniones(data)
         return jsonify({'success': True, 'data': reunion})
     except Exception as e:
@@ -265,7 +263,7 @@ def api_actualizar_evento(id):
     """Actualizar evento"""
     try:
         data = request.get_json()
-        data['id'] = id
+        data['id_evento'] = id
         evento = editar_calendario(data)
         return jsonify({'success': True, 'data': evento})
     except Exception as e:
@@ -287,12 +285,12 @@ def api_obtener_bandeja():
     """Obtener bandeja"""
     try:
         id = request.args.get('id')
-        print(f"🔍 Buscando bandeja - ID: {id}")
+        logger.info(f"🔍 Buscando bandeja - ID: {id}")
         tareas = buscar_bandeja_por_id(id)
-        print(f"✅ Tareas en bandeja encontradas: {len(tareas)}")
+        logger.info(f"✅ Tareas en bandeja encontradas: {len(tareas)}")
         return jsonify({'success': True, 'data': tareas})
     except Exception as e:
-        print(f"❌ Error en api_obtener_bandeja: {e}")
+        logger.error(f"❌ Error en api_obtener_bandeja: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/formularios/bandeja', methods=['POST'])
@@ -310,7 +308,7 @@ def api_actualizar_tarea(id):
     """Actualizar tarea"""
     try:
         data = request.get_json()
-        data['id'] = id
+        data['id_bandeja'] = id
         tarea = editar_bandeja(data)
         return jsonify({'success': True, 'data': tarea})
     except Exception as e:
@@ -330,7 +328,7 @@ def api_obtener_asistencias():
     """Obtener asistencias"""
     try:
         id = request.args.get('id')
-        asistencias = buscar_asistencias_por_id(id)
+        asistencias = buscar_asistencia_por_id(id)
         return jsonify({'success': True, 'data': asistencias})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -340,7 +338,7 @@ def api_crear_asistencia():
     """Crear asistencia"""
     try:
         data = request.get_json()
-        id_asistencia = obtener_ultima_id_y_registrar_asistencias(data)
+        id_asistencia = obtener_ultima_id_y_registrar_asistencia(data)
         return jsonify({'success': True, 'id': id_asistencia})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -350,8 +348,8 @@ def api_actualizar_asistencia(id):
     """Actualizar asistencia"""
     try:
         data = request.get_json()
-        data['id'] = id
-        asistencia = editar_asistencias(data)
+        data['id_asistencia'] = id
+        asistencia = editar_asistencia(data)
         return jsonify({'success': True, 'data': asistencia})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -360,7 +358,7 @@ def api_actualizar_asistencia(id):
 def api_eliminar_asistencia(id):
     """Eliminar asistencia"""
     try:
-        resultado = eliminar_asistencias(id)
+        resultado = eliminar_asistencia(id)
         return jsonify({'success': True, 'message': 'Asistencia eliminada'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -390,7 +388,7 @@ def api_actualizar_joven(id):
     """Actualizar joven"""
     try:
         data = request.get_json()
-        data['id'] = id
+        data['id_joven'] = id
         joven = editar_jovenes(data)
         return jsonify({'success': True, 'data': joven})
     except Exception as e:
@@ -407,41 +405,41 @@ def api_eliminar_joven(id):
 
 @app.route('/api/formularios/finanzas', methods=['GET'])
 def api_obtener_finanzas():
-    """Obtener finanzas"""
+    """Obtener movimientos financieros"""
     try:
         id = request.args.get('id')
-        finanzas = buscar_finanzas_por_id(id)
-        return jsonify({'success': True, 'data': finanzas})
+        movimientos = buscar_movimientos_financieros_por_id(id)
+        return jsonify({'success': True, 'data': movimientos})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/formularios/finanzas', methods=['POST'])
 def api_crear_finanza():
-    """Crear registro financiero"""
+    """Crear movimiento financiero"""
     try:
         data = request.get_json()
-        id_finanza = obtener_ultima_id_y_registrar_finanzas(data)
-        return jsonify({'success': True, 'id': id_finanza})
+        id_movimiento = obtener_ultima_id_y_registrar_movimientos_financieros(data)
+        return jsonify({'success': True, 'id': id_movimiento})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/formularios/finanzas/<int:id>', methods=['PUT'])
 def api_actualizar_finanza(id):
-    """Actualizar registro financiero"""
+    """Actualizar movimiento financiero"""
     try:
         data = request.get_json()
-        data['id'] = id
-        finanza = editar_finanzas(data)
-        return jsonify({'success': True, 'data': finanza})
+        data['id_movimiento'] = id
+        movimiento = editar_movimientos_financieros(data)
+        return jsonify({'success': True, 'data': movimiento})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/formularios/finanzas/<int:id>', methods=['DELETE'])
 def api_eliminar_finanza(id):
-    """Eliminar registro financiero"""
+    """Eliminar movimiento financiero"""
     try:
-        resultado = eliminar_finanzas(id)
-        return jsonify({'success': True, 'message': 'Registro financiero eliminado'})
+        resultado = eliminar_movimientos_financieros(id)
+        return jsonify({'success': True, 'message': 'Movimiento financiero eliminado'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

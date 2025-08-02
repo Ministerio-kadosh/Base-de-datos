@@ -97,37 +97,34 @@ async function registrarPredicadores(event, form) {
   
   const datos = Object.fromEntries(new FormData(form));
   
-  // Asegurar que tenemos todos los campos necesarios
-  datos.estado = 'Creado';
-  datos.fecha = new Date().toISOString();
-  
-  // Mostrar pantalla de carga
-  document.getElementById('loadingOverlay').style.display = 'flex';
+  // Preparar datos según nueva estructura
+  const predicadorData = {
+    nombre: datos.nombre,
+    apellido: datos.apellido,
+    telefono: datos.telefono
+  };
   
   try {
-    const response = await fetch('/api/tablas/predicadores/crear', {
+    const response = await fetch('/api/tablas/predicadores', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(datos)
+      body: JSON.stringify(predicadorData)
     });
 
     const resultado = await response.json();
     
-    document.getElementById('loadingOverlay').style.display = 'none';
-    
     if (resultado.success) {
-      alert("Registro guardado exitosamente");
+      alert("Predicador registrado exitosamente");
       limpiarPredicadores();
       buscarPredicadores();
     } else {
-      alert("Error al registrar: " + resultado.mensaje);
+      alert("Error: " + resultado.error);
     }
   } catch (error) {
-    document.getElementById('loadingOverlay').style.display = 'none';
-    console.error('Error al registrar:', error);
-    alert("Error al registrar: " + error.message);
+    console.error('Error al registrar predicador:', error);
+    alert("Error al registrar predicador");
   }
 }
 
@@ -135,40 +132,38 @@ async function buscarPredicadores() {
   if (!checkAuthentication()) return;
   
   try {
-    const response = await fetch('/api/tablas/predicadores/buscar');
+    const response = await fetch('/api/tablas/predicadores');
     const resultados = await response.json();
     
     const tabla = document.getElementById("TablaPredicadores");
     tabla.innerHTML = "";
     
     if (!resultados.success || !resultados.data || resultados.data.length === 0) {
-      mostrarNoResultados('Predicadores', tabla);
+      tabla.innerHTML = '<div class="error-message">No se encontraron predicadores</div>';
       return;
     }
 
-    resultados.data.forEach((registro) => {
-      const fechaFormateada = formatearFecha(registro.fecha);
-      const estadoDisplay = normalizarEstado(registro.estado);
+    resultados.data.forEach((predicador) => {
+      const fechaFormateada = predicador.fecha_registro ? new Date(predicador.fecha_registro).toLocaleString() : 'N/A';
       const filaHtml = `
-        <div data-id="${registro.id}" class="registro-fila">
+        <div data-id="${predicador.id_predicador}" class="registro-fila">
           <div class="registro-contenido">
-            <strong>ID:</strong> ${registro.id || 'N/A'} | 
-            <strong>Nombre:</strong> ${registro.Nombre || 'N/A'} | 
-            <strong>Apellido:</strong> ${registro.Apellido || 'N/A'} | 
-            <strong>Numero:</strong> ${registro.Numero || 'N/A'} | 
-            <strong>Fecha:</strong> ${fechaFormateada} |
-            <strong>Estado:</strong> ${estadoDisplay}
+            <strong>ID:</strong> ${predicador.id_predicador || 'N/A'} | 
+            <strong>Nombre:</strong> ${predicador.nombre || 'N/A'} | 
+            <strong>Apellido:</strong> ${predicador.apellido || 'N/A'} | 
+            <strong>Teléfono:</strong> ${predicador.telefono || 'N/A'} | 
+            <strong>Fecha Registro:</strong> ${fechaFormateada}
           </div>
           <div class="button-group">
-            <button class="btn btn-primary" onclick="mostrarEditarPredicadores('${registro.id}')">Editar</button>
-            <button class="btn btn-secondary" onclick="eliminarPredicadores('${registro.id}')">Eliminar</button>
+            <button class="btn btn-primary" onclick="mostrarEditarPredicadores('${predicador.id_predicador}')">Editar</button>
+            <button class="btn btn-secondary" onclick="eliminarPredicadores('${predicador.id_predicador}')">Eliminar</button>
           </div>
         </div>`;
       tabla.innerHTML += filaHtml;
     });
   } catch (error) {
-    console.error('Error al buscar registros:', error);
-    alert("Error al buscar registros: " + error.message);
+    console.error('Error al buscar predicadores:', error);
+    alert("Error al buscar predicadores");
   }
 }
 
@@ -180,15 +175,15 @@ async function mostrarEditarPredicadores(id) {
   }
 
   try {
-    const response = await fetch(`/api/tablas/predicadores/buscar/${numericId}`);
+    const response = await fetch(`/api/tablas/predicadores?id=${numericId}`);
     const resultado = await response.json();
     
-    if (!resultado.success || !resultado.data) {
-      alert('No se encontró el registro');
+    if (!resultado.success || !resultado.data || resultado.data.length === 0) {
+      alert('No se encontró el predicador');
       return;
     }
     
-    const datos = resultado.data;
+    const datos = resultado.data[0];
     const modal = document.getElementById("modalEditarPredicadores");
     const form = document.getElementById("formEditarPredicadores");
     
@@ -214,67 +209,59 @@ async function guardarEdicionPredicadores(event) {
   event.preventDefault();
   const form = event.target;
   const datos = Object.fromEntries(new FormData(form));
-  datos.id = validarId(datos.id);
-  datos.estado = 'Editado';
   
-  // Mostrar pantalla de carga
-  document.getElementById('loadingOverlay').style.display = 'flex';
+  // Preparar datos según nueva estructura
+  const predicadorData = {
+    id_predicador: parseInt(datos.id),
+    nombre: datos.nombre,
+    apellido: datos.apellido,
+    telefono: datos.telefono
+  };
   
   try {
-    const response = await fetch('/api/tablas/predicadores/editar', {
+    const response = await fetch(`/api/tablas/predicadores/${datos.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(datos)
+      body: JSON.stringify(predicadorData)
     });
 
     const resultado = await response.json();
     
-    document.getElementById('loadingOverlay').style.display = 'none';
-    
     if (resultado.success) {
-      alert("Editado correctamente");
+      alert("Predicador actualizado correctamente");
       cerrarModalPredicadores();
       buscarPredicadores();
     } else {
-      alert("Error al editar: " + resultado.mensaje);
+      alert("Error: " + resultado.error);
     }
   } catch (error) {
-    document.getElementById('loadingOverlay').style.display = 'none';
-    alert("Error: " + error.message);
+    console.error('Error al actualizar predicador:', error);
+    alert("Error al actualizar predicador");
   }
 }
 
 async function eliminarPredicadores(id) {
   if (!checkAuthentication()) return;
   
-  if (confirm("¿Está seguro que desea eliminar este registro?")) {
-    // Mostrar pantalla de carga
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    
+  if (confirm("¿Está seguro que desea eliminar este predicador?")) {
     try {
-      const response = await fetch(`/api/tablas/predicadores/eliminar/${id}`, {
+      const response = await fetch(`/api/tablas/predicadores/${id}`, {
         method: 'DELETE'
       });
       
       const resultado = await response.json();
       
-      document.getElementById('loadingOverlay').style.display = 'none';
-      
       if (resultado.success) {
-        alert("Eliminado correctamente");
-        limpiarPredicadores();
+        alert("Predicador eliminado correctamente");
         buscarPredicadores();
       } else {
-        alert("Error al eliminar: " + resultado.mensaje);
-        buscarPredicadores();
+        alert("Error: " + resultado.error);
       }
     } catch (error) {
-      document.getElementById('loadingOverlay').style.display = 'none';
-      console.error('Error al eliminar:', error);
-      alert("Error al eliminar: " + error.message);
-      buscarPredicadores();
+      console.error('Error al eliminar predicador:', error);
+      alert("Error al eliminar predicador");
     }
   }
 }
