@@ -152,13 +152,13 @@ def is_admin_by_name(nombre, codigo):
     """Verificar si es administrador por nombre y código"""
     try:
         # Buscar administrador por nombre
-        response = supabase.table('administradores').select('*').eq('nombre', nombre).eq('estado', 'Activo').execute()
+        response = supabase.table('administradores').select('*').eq('nombre_admin', nombre).execute()
         
         if not response.data:
             return False
         
         admin = response.data[0]
-        stored_hash = admin.get('codigo', '')
+        stored_hash = admin.get('codigo_acceso', '')
         
         # Verificar si el código almacenado es un hash bcrypt
         if stored_hash.startswith('$2b$'):
@@ -176,8 +176,13 @@ def is_admin_by_name(nombre, codigo):
 def get_admin_role(nombre):
     """Obtener el rol del administrador por nombre"""
     try:
-        # Como la tabla no tiene columna 'rol', asignamos un rol por defecto
-        # basado en el nombre del administrador
+        # Buscar el rol en la tabla de administradores
+        response = supabase.table('administradores').select('rol_admin').eq('nombre_admin', nombre).execute()
+        
+        if response.data and response.data[0].get('rol_admin'):
+            return response.data[0]['rol_admin']
+            
+        # Si no se encuentra, asignamos un rol por defecto basado en el nombre del administrador
         if 'Principal' in nombre or 'Super' in nombre:
             return 'Super Admin'
         elif 'Admin' in nombre:

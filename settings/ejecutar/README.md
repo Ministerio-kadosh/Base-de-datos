@@ -64,6 +64,13 @@ python setup_supabase.py
 
 # 3. Ejecutar scripts SQL en Supabase
 # Copiar y pegar crear_tablas_faltantes.sql en SQL Editor
+
+# 4. Crear Super Administrador (elegir una opción)
+# Opción A: Usando Python
+python crear_admin_darwin.py
+
+# Opción B: Usando SQL en Supabase
+# Copiar y pegar crear_admin_darwin.sql en SQL Editor
 ```
 
 ## 🔧 Configuración Requerida:
@@ -78,4 +85,22 @@ python setup_supabase.py
 - Estos archivos son para **configuración inicial**
 - No ejecutar en producción sin revisar
 - Mantener actualizados con cambios en la estructura
-- Documentar cualquier cambio realizado 
+- Documentar cualquier cambio realizado
+
+## 🔐 Nuevos Scripts de Administrador:
+
+### **crear_admin_darwin.py**
+- **Propósito**: Script Python para crear un Super Administrador
+- **Uso**: `python crear_admin_darwin.py`
+- **Funciones**:
+  - Crea un administrador "Darwin Garcia" con rol "Super Admin"
+  - Genera hash SHA256 seguro para el código "adali-930"
+  - Verifica si ya existe antes de crear
+
+### **crear_admin_darwin.sql**
+- **Propósito**: Script SQL para crear un Super Administrador
+- **Uso**: Ejecutar en Supabase SQL Editor
+- **Funciones**:
+  - Crea un administrador "Darwin Garcia" con rol "Super Admin"
+  - Utiliza hash SHA256 pre-generado para el código "adali-930"
+  - Verifica si ya existe antes de crear
